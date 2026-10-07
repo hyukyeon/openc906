@@ -1,0 +1,12 @@
+# ---- 생성물 (study 추가분)
+__pycache__/
+*.pyc
+smart_run/work/
+smart_run/qemu_tests/build/
+smart_run/study/notion_backup/
+smart_run/study/unit_tests/out/
+smart_run/study/unit_tests/build/
+smart_run/study/unit_tests/web/surfer/
+smart_run/study/unit_tests/web/server.log
+smart_run/study/unit_tests/web/.server.pid
+smart_run/study/notion_pages.json

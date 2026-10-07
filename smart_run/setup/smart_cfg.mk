@@ -20,6 +20,7 @@ CASE_LIST := \
       ISA_INT \
       ISA_LS \
       ISA_FP \
+      ISA_VECTOR \
       coremark \
       MMU \
       interrupt \
@@ -27,6 +28,34 @@ CASE_LIST := \
       debug \
       csr \
       cache \
+
+
+ISA_VECTOR_build:
+	@chmod +x ./tests/bin/Srec2vmem
+	@cp ./tests/lib/linker.lcf ./work/linker.lcf
+	@cp ./tests/cases/ISA/ISA_VECTOR/rvv_vadd_smoke.s ./work/
+	@cp ./tests/cases/ISA/ISA_VECTOR/crt0_v.s ./work/crt0.s
+	@$(MAKE) -s ISA_VECTOR_compile > ./work/ISA_VECTOR_build.case.log 2>&1
+
+ISA_VECTOR_compile:
+	cd ./work && \
+	  riscv64-unknown-elf-gcc -march=rv64imafdcv -mabi=lp64d -mtune=thead-c906 \
+	    -c crt0.s -o crt0.o && \
+	  riscv64-unknown-elf-gcc -march=rv64imafdcv -mabi=lp64d -mtune=thead-c906 \
+	    -c rvv_vadd_smoke.s -o rvv_vadd_smoke.o && \
+	  riscv64-unknown-elf-gcc -march=rv64imafdcv -mabi=lp64d -nostdlib \
+	    -Tlinker.lcf crt0.o rvv_vadd_smoke.o -o rvv_vadd_smoke.elf && \
+	  riscv64-unknown-elf-objcopy -O srec rvv_vadd_smoke.elf \
+	    rvv_vadd_smoke_inst.hex -j .text -j .rodata && \
+	  riscv64-unknown-elf-objcopy -O srec rvv_vadd_smoke.elf \
+	    rvv_vadd_smoke_data.hex -j .data -j .bss && \
+	  riscv64-unknown-elf-objcopy -O srec rvv_vadd_smoke.elf \
+	    rvv_vadd_smoke.hex && \
+	  ../tests/bin/Srec2vmem rvv_vadd_smoke_inst.hex inst.pat && \
+	  ../tests/bin/Srec2vmem rvv_vadd_smoke_data.hex data.pat && \
+	  ../tests/bin/Srec2vmem rvv_vadd_smoke.hex case.pat && \
+	  riscv64-unknown-elf-objdump -S rvv_vadd_smoke.elf > rvv_vadd_smoke.obj && \
+	  echo "  [ISA_VECTOR] build OK"
 
 
 ISA_THEAD_build:
