@@ -1,0 +1,12 @@
+digraph G {
+  rankdir=LR; nodesep=0.3; ranksep=0.5;
+  graph [fontname="WenQuanYi Zen Hei", fontsize=13, labelloc=t, label="고급 프런트엔드 : decoupled fetch + 다단 예측기 (BOOM / XiangShan 계열)\n"];
+  node  [fontname="WenQuanYi Zen Hei", fontsize=11, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge  [fontname="WenQuanYi Zen Hei", fontsize=10];
+  bpu [label="BPU (매 사이클 fetch 블록 예측)\nuBTB : 0-bubble (C906 의 16-entry BTB 역할)\nFTB/BTB : 모든 분기의 target\nTAGE : 여러 길이 히스토리 + PC 해시\nITTAGE : 간접 분기 target\nRAS : 재귀/덮어쓰기 복구"];
+  ftq [label="FTQ\n예측된 fetch 블록 큐\n(예측과 fetch 분리)"];
+  ifu [label="IFU\nI$ 접근 (FTQ 에서 소비)\npre-decode 로 검증"];
+  be  [label="Backend\n분기 판정 → FTQ 로 갱신/복구"];
+  bpu -> ftq -> ifu -> be; be -> bpu [label="update/redirect", style=dashed];
+  c906 [shape=note, fillcolor="#fde9e7", color="#c0504d", label="C906 현재\nBTB 16 (FIFO, 부분 태그) · BHT 16Kb (GHR only, 13bit)\nRAS 4 · 간접 jalr 예측 없음 · 예측과 fetch 결합"];
+}

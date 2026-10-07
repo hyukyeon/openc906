@@ -1,0 +1,32 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ time_ticks = 464
+@@ mcycle_ticks = 464
+[wfi] cycle 4086: sleep (LPMD), int_flag = 0
+[wfi] cycle 4362: wake up after 276 cycles
+[irq] #1 cycle 4362: M-mode interrupt cause 7 on retire of pc 0000000328, priv 3 -> 3, mepc = 000000032c, PC -> 0000000140 (source up 4 cycles before)
+@@ irq1_src_to_trap_cycles = 4
+@@ irq1_trap_to_vector_retire_cycles = 12
+@@ timer_mcause = 9223372036854775815
+@@ timer_mepc_minus_wfi = 4
+@@ timer_entry_time_minus_target = 30
+@@ wfi_to_handler_cycles = 320
+[irq] #2 cycle 6822: M-mode interrupt cause 3 on retire of pc 00000003bc, priv 3 -> 3, mepc = 00000003c0, PC -> 0000000140 (source up 2 cycles before)
+@@ irq2_src_to_trap_cycles = 2
+@@ irq2_trap_to_vector_retire_cycles = 13
+@@ swi_mcause = 9223372036854775811
+@@ irq_count_after_swi = 2
+[irq] #3 cycle 8266: M-mode interrupt cause 3 on retire of pc 0000000454, priv 3 -> 3, mepc = 0000000458, PC -> 0000000140 (source up 26 cycles before)
+@@ irq3_src_to_trap_cycles = 26
+@@ irq3_trap_to_vector_retire_cycles = 6
+@@ mip_MSIP_while_MIE0 = 1
+@@ irq_count_while_MIE0 = 2
+@@ irq_count_after_MIE1 = 3
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

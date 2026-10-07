@@ -1,0 +1,17 @@
+digraph G {
+  graph [fontname="WenQuanYi Zen Hei", fontsize=13, labelloc=t, label="RISC-V 32-bit 명령 포맷 (비트 31 → 0).  색: 같은 의미의 필드는 모든 포맷에서 같은 위치\n"];
+  node [shape=plaintext, fontname="DejaVu Sans Mono", fontsize=11];
+  t [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5">
+<TR><TD BGCOLOR="#dddddd"><B>fmt</B></TD><TD BGCOLOR="#dddddd">31 ... 25</TD><TD BGCOLOR="#dddddd">24 ... 20</TD><TD BGCOLOR="#dddddd">19 ... 15</TD><TD BGCOLOR="#dddddd">14..12</TD><TD BGCOLOR="#dddddd">11 ... 7</TD><TD BGCOLOR="#dddddd">6 ... 0</TD></TR>
+<TR><TD><B>R</B></TD><TD>funct7</TD><TD BGCOLOR="#d9ead3">rs2</TD><TD BGCOLOR="#cfe2f3">rs1</TD><TD>funct3</TD><TD BGCOLOR="#fce5cd">rd</TD><TD>opcode</TD></TR>
+<TR><TD><B>I</B></TD><TD COLSPAN="2" BGCOLOR="#fff2cc">imm[11:0]</TD><TD BGCOLOR="#cfe2f3">rs1</TD><TD>funct3</TD><TD BGCOLOR="#fce5cd">rd</TD><TD>opcode</TD></TR>
+<TR><TD><B>S</B></TD><TD BGCOLOR="#fff2cc">imm[11:5]</TD><TD BGCOLOR="#d9ead3">rs2</TD><TD BGCOLOR="#cfe2f3">rs1</TD><TD>funct3</TD><TD BGCOLOR="#fff2cc">imm[4:0]</TD><TD>opcode</TD></TR>
+<TR><TD><B>B</B></TD><TD BGCOLOR="#fff2cc">imm[12|10:5]</TD><TD BGCOLOR="#d9ead3">rs2</TD><TD BGCOLOR="#cfe2f3">rs1</TD><TD>funct3</TD><TD BGCOLOR="#fff2cc">imm[4:1|11]</TD><TD>opcode</TD></TR>
+<TR><TD><B>U</B></TD><TD COLSPAN="4" BGCOLOR="#fff2cc">imm[31:12]</TD><TD BGCOLOR="#fce5cd">rd</TD><TD>opcode</TD></TR>
+<TR><TD><B>J</B></TD><TD COLSPAN="4" BGCOLOR="#fff2cc">imm[20|10:1|11|19:12]</TD><TD BGCOLOR="#fce5cd">rd</TD><TD>opcode</TD></TR>
+</TABLE>>];
+  n [shape=note, fontname="WenQuanYi Zen Hei", fontsize=11, style=filled, fillcolor="#f6f6f6",
+     label="· 즉치값의 부호 비트는 항상 inst[31] → 디코드 전에 부호 확장 시작\l· rs1/rs2/rd 위치 고정 → 레지스터 읽기를 디코드와 병렬로\l· B = S 와, J = U 와 비트 대부분 공유 → 즉치값 MUX 축소 (대신 사람 눈에는 뒤섞여 보임)\l· B/J 의 imm[0] 은 항상 0 (2B 정렬) - 그래서 비트를 하나 더 멀리 뻗을 수 있다\l"];
+  t -> n [style=invis];
+}

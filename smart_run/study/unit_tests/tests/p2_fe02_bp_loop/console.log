@@ -1,0 +1,23 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ cfg1_btb_on_cold_cycles = 444
+@@ cfg1_btb_on_cold_mispred = 19
+@@ cfg1_btb_on_warm_cycles = 431
+@@ cfg1_btb_on_warm_mispred = 14
+@@ cfg2_btb_off_cold_cycles = 532
+@@ cfg2_btb_off_cold_mispred = 19
+@@ cfg2_btb_off_warm_cycles = 527
+@@ cfg2_btb_off_warm_mispred = 14
+@@ cfg3_bpe_off_cold_cycles = 576
+@@ cfg3_bpe_off_cold_mispred = 63
+@@ cfg3_bpe_off_warm_cycles = 576
+@@ cfg3_bpe_off_warm_mispred = 63
+@@ empty_tic_toc_cycles = 3
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

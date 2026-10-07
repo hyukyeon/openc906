@@ -1,0 +1,29 @@
+digraph G {
+  rankdir=LR; nodesep=0.25; ranksep=0.35; newrank=true;
+  graph [fontname="WenQuanYi Zen Hei", fontsize=13, labelloc=t, label="C906 정수 파이프라인 (RTL 신호 기준)  -  아래 빨간 칸: 그 단계에서 fetch 를 돌릴 때의 비용(실측)\n"];
+  node  [fontname="WenQuanYi Zen Hei", fontsize=11, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5", width=2.3, height=1.45];
+  edge  [fontname="WenQuanYi Zen Hei", fontsize=10, color="#555555"];
+
+  IF  [label="IF  (t)\npcgen: fetch_pc 결정\nI$ tag/data 요청 (4B)\nBTB 조회"];
+  IC  [label="I$ 응답  (t+1)\nway 선택, 4B 반환\nBTB hit 면\n다음 fetch 즉시 변경"];
+  IP  [label="IP  (t+2)\nipack: 16/32bit 정렬\npre-decode\nBHT · RAS · BTB 갱신\n(IBUF 6 entry)"];
+  ID  [label="ID  (t+2~)\n디코드 · RVC 확장\nGPR 읽기\nWBT: RAW/WAW\n→ EX1 dispatch"];
+  EX1 [label="EX1  (t+3)\nALU/BJU 결과\nBJU 분기 판정\nLSU-AG · uTLB\nMUL1 · DIV · CSR"];
+  RT  [label="EX2 / RT  (t+4)\nin-order retire\nWB · fwd0~2\nLSU-DC (load 데이터)\nMUL2"];
+  EX3 [label="EX3\nMUL 결과\n(latency 3)", fillcolor="#f6f6f6"];
+  IF -> IC -> IP -> ID -> EX1 -> RT -> EX3;
+
+  node [fillcolor="#fde9e7", color="#c0504d", height=0.8];
+  R0 [label="BTB redirect\n0 cycle"];
+  R1 [label="IP redirect\n(taken/jal/ret)\n2 cycle"];
+  R2 [label="BJU mispredict\nJALR(rs1≠ra)\n3 cycle"];
+  R3 [label="RTU redirect\ntrap / mret / fence.i\n수십 cycle"];
+  {rank=same; IC; R0}
+  {rank=same; IP; R1}
+  {rank=same; EX1; R2}
+  {rank=same; RT; R3}
+  IC -> R0 [style=dotted, arrowhead=none];
+  IP -> R1 [style=dotted, arrowhead=none];
+  EX1 -> R2 [style=dotted, arrowhead=none];
+  RT -> R3 [style=dotted, arrowhead=none];
+}

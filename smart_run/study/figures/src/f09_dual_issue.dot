@@ -1,0 +1,15 @@
+digraph G {
+  rankdir=LR; nodesep=0.3; ranksep=0.45;
+  graph [fontname="WenQuanYi Zen Hei", fontsize=13, labelloc=t, label="C906 을 2-wide in-order(dual-issue)로 확장한다면 - 바뀌는 지점\n"];
+  node  [fontname="WenQuanYi Zen Hei", fontsize=11, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge  [fontname="WenQuanYi Zen Hei", fontsize=10];
+  f  [label="IFU\nfetch 4B → 8B/16B\nipack 이 최대 4 개 명령 정렬\nBTB/BHT 가 블록 단위 예측"];
+  ib [label="IBUF\npop 1 → 2\n(aq_ifu_ibuf_pop_entry x2)"];
+  d  [label="ID x2\n디코더 2 개\npairing 규칙 검사\n(같은 rd, 같은 유닛, 분기 뒤 등)"];
+  r  [label="GPR 2R1W → 4R2W\nWBT 2 명령 동시 검사\n+ 같은 묶음 안 RAW 검사"];
+  p0 [label="Pipe A : ALU · BJU · LSU"];
+  p1 [label="Pipe B : ALU · MUL/DIV"];
+  rt [label="RTU : retire 2/cycle\nprecise exception 순서 유지\nforward 경로 2배 (fwd 네트워크)"];
+  f -> ib -> d -> r; r -> p0; r -> p1; p0 -> rt; p1 -> rt;
+  ref [shape=note, fillcolor="#f6f6f6", label="참고 구현: SiFive U74, Cortex-A55, XuanTie C908\n(모두 dual-issue in-order)"];
+}

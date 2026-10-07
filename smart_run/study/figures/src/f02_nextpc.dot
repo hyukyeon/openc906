@@ -1,0 +1,16 @@
+digraph G {
+  rankdir=TB; nodesep=0.3; ranksep=0.35;
+  graph [fontname="WenQuanYi Zen Hei", fontsize=13, labelloc=t, label="다음 fetch PC 선택 (aq_ifu_pcgen.v)  - 위쪽일수록 우선\n"];
+  node  [fontname="WenQuanYi Zen Hei", fontsize=11, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5", width=4.2];
+  edge  [fontname="WenQuanYi Zen Hei", fontsize=10];
+  a [label="1. reset : cp0_xx_mrvbr (reset vector, 기본 0x0)"];
+  b [label="2. RTU chgflw : 예외/인터럽트 진입(mtvec), mret/sret, fence.i, 파이프라인 flush\n   rtu_ifu_chgflw_vld / _pc"];
+  c [label="3. IU 분기 판정 : BJU mispredict, rs1≠ra 인 JALR\n   iu_ifu_tar_pc_vld / iu_ifu_tar_pc"];
+  d [label="4. IP 예측 : taken 조건분기, jal (pred_chgflw)\n   BTB 가 이미 같은 target 으로 돌렸으면 생략"];
+  e [label="5. IP curflw : RAS 로 예측한 ret, 2번째 압축 분기 지연 처리"];
+  f [label="6. BTB : IF PC 로 조회한 target (btb_pred_flop)"];
+  g [label="7. 순차 : {fetch_pc[63:2], 2'b0} + 4  (I$ grant 시)", fillcolor="#f6f6f6"];
+  m [label="pcgen_ifpc  →  I-Cache / BTB", shape=box, style="filled", fillcolor="#4a6fa5", fontcolor=white, width=3];
+  a -> b -> c -> d -> e -> f -> g [style=invis];
+  {a b c d e f g} -> m [color="#888888"];
+}

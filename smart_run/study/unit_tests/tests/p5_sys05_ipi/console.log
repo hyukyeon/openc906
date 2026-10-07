@@ -1,0 +1,50 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+[irq] #1 cycle 2766: M-mode interrupt cause 3 on retire of pc 0000000364, priv 3 -> 3, mepc = 0000000368, PC -> 00000009cc (source up 2 cycles before)
+@@ irq1_src_to_trap_cycles = 2
+@@ irq1_trap_to_vector_retire_cycles = 213
+@@ m1_irq_count = 1
+@@ m1_mcause = 9223372036854775811
+@@ m1_message_received = 4660
+@@ m1_mepc_index_in_busy = 11
+@@ m1_busy_count = 60
+[irq] #2 cycle 5999: M-mode interrupt cause 3 on retire of pc 0000000b24, priv 1 -> 3, mepc = 0000000518, PC -> 00000009cc (source up 3 cycles before)
+@@ irq2_src_to_trap_cycles = 3
+@@ irq2_trap_to_vector_retire_cycles = 6
+[irq] #3 cycle 6071: S-mode interrupt cause 1 on retire of pc 0000000a60, priv 1 -> 1, sepc = 0000000518, PC -> 0000000b44 (source up 11 cycles before)
+@@ irq3_src_to_trap_cycles = 11
+@@ irq3_trap_to_vector_retire_cycles = 12
+@@ s2_irq_count = 2
+@@ s2_cause_history(3=MSI,1=SSI) = 769
+@@ s2_last_scause = 9223372036854775809
+@@ s2_sepc_index_in_busy = 0
+@@ s2_message_received_by_M = 21845
+@@ s2_busy_count = 60
+[irq] #4 cycle 9541: S-mode interrupt cause 1 on retire of pc 0000000740, priv 1 -> 1, sepc = 0000000744, PC -> 0000000b44 (source up 5 cycles before)
+@@ irq4_src_to_trap_cycles = 5
+@@ irq4_trap_to_vector_retire_cycles = 8
+@@ s3_mxstatus_CLINTEE = 1
+@@ s3_irq_count = 1
+@@ s3_scause = 9223372036854775809
+@@ s3_sepc_index_in_busy = 9
+@@ s3_busy_count = 60
+[tbdev] cycle 12138: IRQ0_SET 0
+[tbdev] cycle 12139: irq0 = 1  (PLIC ID 35)
+[irq] #5 cycle 12374: M-mode interrupt cause 11 on retire of pc 000000094c, priv 3 -> 3, mepc = 0000000950, PC -> 00000009ec (source up 234 cycles before)
+@@ irq5_src_to_trap_cycles = 234
+@@ irq5_trap_to_vector_retire_cycles = 6
+[tbdev] cycle 12426: irq0 = 0  (CLR, 287 cycles high)
+[irq] #6 cycle 12438: M-mode interrupt cause 3 on retire of pc 0000000ac8, priv 3 -> 3, mepc = 0000000950, PC -> 00000009cc (source up 298 cycles before)
+@@ irq6_src_to_trap_cycles = 298
+@@ irq6_trap_to_vector_retire_cycles = 6
+@@ m4_irq_count_while_MIE0 = 0
+@@ m4_irq_count = 2
+@@ m4_cause_history(0xb03=MEI,MSI) = 2819
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

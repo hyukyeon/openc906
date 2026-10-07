@@ -1,0 +1,26 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ ecall_mcause = 11
+@@ ecall_mepc_minus_site = 0
+@@ ecall_entry_cycles = 14
+@@ ecall_roundtrip_cycles = 38
+@@ illegal_mcause = 2
+@@ illegal_mepc_minus_site = 0
+@@ illegal_mtval = 3221229683
+@@ illegal_inst_encoding = 3221229683
+@@ ebreak_mcause = 3
+@@ ebreak_mepc_minus_site = 0
+@@ ebreak_mtval = 0
+@@ misaligned_ld_mm1_cycles = 7
+@@ misaligned_ld_mm1_trap_cause = 0
+@@ misaligned_ld_mm0_mcause = 4
+@@ misaligned_ld_mm0_mtval_minus_buf = 3
+@@ aligned_ld_cycles = 6
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

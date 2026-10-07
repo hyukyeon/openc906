@@ -1,0 +1,19 @@
+digraph G {
+  rankdir=LR; nodesep=0.3; ranksep=0.5;
+  graph [fontname="WenQuanYi Zen Hei", fontsize=13, labelloc=t, label="LSU 와 메모리 경로 (aq_lsu_*.v, aq_mmu_*.v, aq_biu_*.v, smart_run SoC)\n"];
+  node  [fontname="WenQuanYi Zen Hei", fontsize=11, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge  [fontname="WenQuanYi Zen Hei", fontsize=10];
+  ag  [label="AG (=EX1)\nVA = rs1 + imm\nD-uTLB(10, FA) 조회\nPMP 권한도 uTLB 에 캐시"];
+  dc  [label="DC (=EX2)\nD$ tag 비교 (4-way, set=addr[11:6]\n + VA[12] alias 그룹)\nSTB forward 검사 → load 데이터"];
+  stb [label="STB (4 entry)\nretire 된 store 대기\n같은 크기/주소 load 에 forward\n크기 다르면 partial → 재시도(+2)"];
+  dcache [label="D-Cache 32KB\n4-way, 64B line, FIFO 교체\nwrite-back, WA(MHCR.WA)", shape=box3d, fillcolor="#fff7e0", color="#b08a2e"];
+  lfb [label="LFB (8 entry)\nmiss → line fill 요청\n최대 8 개 outstanding (non-blocking)\ncritical word 먼저 반환"];
+  vb  [label="VB (1 line)\ndirty victim write-back"];
+  ptw [label="jTLB(128, 4-way) → PTW\nSv39 3 단계 walk\nPTE 를 D$ 경유로 읽음"];
+  biu [label="BIU\nAXI4 128bit master\n64B line = 4 beat (INCR, arlen=3)"];
+  soc [label="smart_run SoC\naxi_fifo 지연 모델 + SRAM\n0x0~0x1FFFF : bus_delay(기본 0)\n그 외 : 0~200 cycle 가변", fillcolor="#f6f6f6"];
+  ag -> dc; dc -> dcache [dir=both]; stb -> dc [label="fwd"]; stb -> dcache [label="drain"];
+  dc -> lfb [label="miss"]; lfb -> biu; vb -> biu; dcache -> vb [label="evict dirty"];
+  ag -> ptw [label="uTLB miss"]; ptw -> dc [style=dashed, label="PTE load"];
+  biu -> soc [dir=both];
+}

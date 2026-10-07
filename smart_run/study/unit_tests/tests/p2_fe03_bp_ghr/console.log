@@ -1,0 +1,19 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ alt_cycles = 1007
+@@ alt_mispred = 18
+@@ alt_condbr = 256
+@@ p3_cycles = 794
+@@ p3_mispred = 30
+@@ alias_cycles = 14033
+@@ alias_mispred = 182
+@@ ctrl_cycles = 13871
+@@ ctrl_mispred = 20
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

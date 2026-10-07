@@ -1,0 +1,22 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ s_first_load_cycles(ptw) = 56
+@@ s_second_load_cycles(tlb_hit) = 7
+@@ s_loaded_value = 1515852340
+@@ s_loaded_value_same_color_va = 1515852340
+@@ load_pf_mcause = 13
+@@ load_pf_mtval = 1073745920
+@@ store_pf_mcause = 15
+@@ store_pf_mtval = 1073750016
+@@ color1_read_after_color0_write = 2004322440
+@@ color0_read_after_color1_write = 2576984746
+@@ pa_read_of_color0_write = 2004322440
+@@ pa_read_of_color1_write = 2576984746
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

@@ -1,0 +1,13 @@
+digraph G {
+  rankdir=LR; nodesep=0.3; ranksep=0.6;
+  graph [fontname="WenQuanYi Zen Hei", fontsize=13, labelloc=t, label="ID 단계 hazard 판정과 forwarding (aq_idu_id_ctrl.v / aq_idu_id_wbt.v)\n"];
+  node  [fontname="WenQuanYi Zen Hei", fontsize=11, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge  [fontname="WenQuanYi Zen Hei", fontsize=10];
+  wbt [label="WBT (x1~x31 각 1 entry)\n'이 레지스터를 쓸 명령이 진행 중인가'\n생산자 종류(ALU/BJU/LSU/MULT/DIV) + 진행 단계(CNT)"];
+  id  [label="ID : src0/1/2, dst 검사\nRAW = src 가 busy\nWAW = dst 가 busy"];
+  ex  [label="예외(stall 안 함) : raw_except\n1) 생산자 ALU/BJU → EX1 결과 forward\n2) LOAD → 조건분기 (BJU 가 대기)\n3) RTU fwd0~2 로 받을 수 있는 경우\n4) LOAD → STORE 데이터(src2)", fillcolor="#e8f4e8", color="#4a8f4a"];
+  st  [label="stall (실측, 쌍당)\nload→use : +1\nmul→use  : +2\nload→store 주소 : +1\nload ; ALU 가 같은 rd (WAW) : +2", fillcolor="#fde9e7", color="#c0504d"];
+  wbt -> id; id -> ex [label="예외 조건"]; id -> st [label="그 외"];
+  fwd [label="forward 소스\nEX1 ALU/BJU 결과\nRTU fwd0/1/2 (wb 직전 값)\nLSU EX2 load 데이터"];
+  fwd -> ex [style=dashed];
+}

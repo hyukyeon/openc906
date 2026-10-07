@@ -1,0 +1,22 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ alu_indep = 35
+@@ alu_dep = 35
+@@ ld_use = 51
+@@ ld_indep = 35
+@@ ld_ld_chase = 36
+@@ mul_use = 67
+@@ mul_indep = 36
+@@ ld_branch = 43
+@@ ld_store_data = 35
+@@ ld_store_addr = 51
+@@ waw_ld_alu = 67
+@@ empty = 3
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

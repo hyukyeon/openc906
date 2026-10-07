@@ -1,0 +1,15 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ sd_ld_same = 36
+@@ sd_ld_other = 36
+@@ sd_lw_inside = 68
+@@ sw_ld_partial = 68
+@@ sb_lbu_same = 36
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

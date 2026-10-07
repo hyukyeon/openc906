@@ -1,0 +1,29 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ mul_chain_x16 = 51
+@@ mul_indep_x16 = 21
+@@ mulh_chain_x16 = 51
+@@ mulw_chain_x16 = 51
+@@ baseline_addi = 4
+@@ divu_max_by_3 = 39
+@@ divu_1000_by_3 = 15
+@@ divu_7_by_7 = 8
+@@ divu_3_by_7 = 8
+@@ divu_x_by_1 = 24
+@@ divu_by_zero = 5
+@@ div_neg1000_by_3 = 12
+@@ divw_1000_by_3 = 12
+@@ remu_max_by_3 = 39
+@@ divu_zero_by_3 = 5
+@@ div_overflow = 5
+@@ divu_big_by_big = 8
+@@ divu_then_remu_same_operands = 16
+@@ divu_alone_same_operands_as_30 = 15
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

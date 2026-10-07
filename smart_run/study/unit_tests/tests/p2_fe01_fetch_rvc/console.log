@@ -1,0 +1,20 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ rv32_cold_cycles = 61
+@@ rv32_cold_icmiss = 2
+@@ rv32_warm_cycles = 35
+@@ rv32_warm_icmiss = 0
+@@ rvc_cold_cycles = 41
+@@ rvc_cold_icmiss = 1
+@@ rvc_warm_cycles = 35
+@@ rvc_warm_icmiss = 0
+@@ rv32_misaligned_warm_cycles = 37
+@@ empty_block_cycles = 3
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

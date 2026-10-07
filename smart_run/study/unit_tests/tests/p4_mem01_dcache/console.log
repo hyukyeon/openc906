@@ -1,0 +1,29 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ load_miss_cycles = 31
+@@ load_hit_cycles = 5
+@@ conflict_A0_reuse_cycles = 5
+@@ conflict_A4_cycles = 30
+@@ conflict_A0_after_A4_cycles = 222
+@@ conflict_A1_after_A4_cycles = 21
+@@ walk_d0_pf_off_cycles = 1229
+@@ walk_d0_pf_off_rd_miss = 64
+@@ walk_d0_pf_on_cycles = 3164
+@@ walk_d0_pf_on_rd_miss = 54
+@@ bus_delay_readback = 100
+@@ walk_d100_pf_off_cycles = 7629
+@@ walk_d100_pf_off_rd_miss = 64
+@@ walk_d100_pf_on_cycles = 8564
+@@ walk_d100_pf_on_rd_miss = 54
+@@ store_wa_on_cycles = 812
+@@ reload_after_wa_on_rd_miss = 0
+@@ store_wa_off_cycles = 1220
+@@ reload_after_wa_off_rd_miss = 64
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

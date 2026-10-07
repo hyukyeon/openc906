@@ -1,0 +1,19 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ s_scause_from_u_ecall = 8
+@@ s_sepc_minus_u_entry = 4
+@@ s_sstatus_SPP(0=U) = 0
+@@ m_mcause_from_s_ecall = 9
+@@ m_mstatus_MPP_from_s(1=S) = 1
+@@ mstatus_SIE_after_writing_sstatus_SIE = 1
+@@ m_mcause_from_u_illegal = 2
+@@ m_mstatus_MPP_from_u(0=U) = 0
+@@ m_mtval_from_u_illegal(inst) = 805315443
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

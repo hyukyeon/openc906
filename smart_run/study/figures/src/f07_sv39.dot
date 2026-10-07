@@ -1,0 +1,14 @@
+digraph G {
+  rankdir=LR; nodesep=0.25; ranksep=0.45;
+  graph [fontname="WenQuanYi Zen Hei", fontsize=13, labelloc=t, label="Sv39 page walk - p4_mem04_sv39 테스트의 실제 주소 (waveform lsu_dc_pa)\n"];
+  node  [fontname="WenQuanYi Zen Hei", fontsize=11, shape=record, style="filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge  [fontname="WenQuanYi Zen Hei", fontsize=10];
+  va   [label="{VA 0x0000_4000_0000|{VPN[2]=1|VPN[1]=0|VPN[0]=0|offset=0}}", fillcolor="#fff7e0"];
+  satp [label="{satp|MODE=8 (Sv39)|PPN = root(0x40000)\>\>12}"];
+  root [label="{root @0x40000|[0] 1GB leaf (identity, 코드/스택)|<p1>[1] → l1  (PA 0x40008 읽기)}"];
+  l1   [label="{l1 @0x41000|<p0>[0] → l0  (PA 0x41000 읽기)}"];
+  l0   [label="{l0 @0x42000|<p0>[0] → target 0x43000 RW|[1] invalid → load PF(13)|[2] R only → store PF(15)|[3] → target (VA[12]=1)}"];
+  pa   [label="{PA 0x43000|data}", fillcolor="#e8f4e8", color="#4a8f4a"];
+  va -> satp -> root; root:p1 -> l1; l1:p0 -> l0; l0:p0 -> pa;
+  note [shape=note, fillcolor="#f6f6f6", label="첫 접근 96 cycle (uTLB/jTLB miss + PTE 3회 읽기)\n두 번째 7 cycle (TLB hit)\nPTE[63:59] = C906 확장 속성 (MXSTATUS.MAEE=1 일 때)"];
+}

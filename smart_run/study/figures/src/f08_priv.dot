@@ -1,0 +1,14 @@
+digraph G {
+  rankdir=LR; nodesep=0.5; ranksep=1.2;
+  graph [fontname="WenQuanYi Zen Hei", fontsize=13, labelloc=t, label="특권 모드 전환 - p5_sys01_priv_deleg 흐름\n"];
+  node  [fontname="WenQuanYi Zen Hei", fontsize=12, shape=circle, style=filled, fillcolor="#eef3fb", color="#4a6fa5", width=1.1];
+  edge  [fontname="WenQuanYi Zen Hei", fontsize=10];
+  M [label="M\n(11)", fillcolor="#fde9e7", color="#c0504d"];
+  S [label="S\n(01)", fillcolor="#fff7e0", color="#b08a2e"];
+  U [label="U\n(00)", fillcolor="#e8f4e8", color="#4a8f4a"];
+  M -> S [label="mret\n(mstatus.MPP=01)"];
+  S -> U [label="sret\n(sstatus.SPP=0)"];
+  U -> S [label="ecall (cause 8)\nmedeleg[8]=1 → stvec\nscause/sepc/SPP 저장"];
+  S -> M [label="ecall (cause 9)\n위임 안 됨 → mtvec\nMPP=01 저장"];
+  U -> M [label="M CSR 접근 = illegal (2)\n위임 안 됨 → mtvec\nmtval = 명령 인코딩"];
+}

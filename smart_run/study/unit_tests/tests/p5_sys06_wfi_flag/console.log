@@ -1,0 +1,61 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+[flag] cycle 2772: int_flag <- 0
+[tbdev] cycle 2791: IRQ0_SET 300
+[wfi] cycle 2800: sleep (LPMD), int_flag = 0
+[tbdev] cycle 3092: irq0 = 1  (PLIC ID 35)
+[wfi] cycle 3126: wake up after 326 cycles
+[irq] #1 cycle 3126: M-mode interrupt cause 11 on retire of pc 0000000378, priv 3 -> 3, mepc = 000000037c, PC -> 000000082c (source up 33 cycles before)
+@@ irq1_src_to_trap_cycles = 33
+@@ irq1_trap_to_vector_retire_cycles = 12
+[flag] cycle 3407: int_flag <- 1
+[tbdev] cycle 3411: irq0 = 0  (CLR, 319 cycles high)
+@@ m1_int_flag_after_loop = 1
+@@ m1_irq_count = 1
+@@ m1_id_history = 35
+@@ m1_mepc_minus_wfi = 4
+@@ m1_handler_entry_to_flag_set_mcycle = 30
+@@ m1_flag_set_to_loop_exit_mcycle = 39
+[flag] cycle 5977: int_flag <- 0
+[tbdev] cycle 5981: IRQ1_SET 200
+[tbdev] cycle 5982: IRQ0_SET 600
+[wfi] cycle 5991: sleep (LPMD), int_flag = 0
+[tbdev] cycle 6182: irq1 = 1  (PLIC ID 36)
+[wfi] cycle 6216: wake up after 225 cycles
+[irq] #2 cycle 6216: M-mode interrupt cause 11 on retire of pc 0000000474, priv 3 -> 3, mepc = 0000000478, PC -> 000000082c (source up 33 cycles before)
+@@ irq2_src_to_trap_cycles = 33
+@@ irq2_trap_to_vector_retire_cycles = 6
+[tbdev] cycle 6268: irq1 = 0  (CLR, 86 cycles high)
+[wfi] cycle 6289: sleep (LPMD), int_flag = 0
+[tbdev] cycle 6583: irq0 = 1  (PLIC ID 35)
+[wfi] cycle 6618: wake up after 329 cycles
+[irq] #3 cycle 6618: M-mode interrupt cause 11 on retire of pc 0000000474, priv 3 -> 3, mepc = 0000000478, PC -> 000000082c (source up 34 cycles before)
+@@ irq3_src_to_trap_cycles = 34
+@@ irq3_trap_to_vector_retire_cycles = 6
+[flag] cycle 6663: int_flag <- 1
+[tbdev] cycle 6667: irq0 = 0  (CLR, 84 cycles high)
+@@ m2_int_flag_after_loop = 1
+@@ m2_irq_count = 2
+@@ m2_id_history = 9251
+@@ m2_first_mepc_minus_wfi = 4
+@@ m2_last_mepc_minus_wfi = 4
+@@ m2_handler_entry_to_flag_set_mcycle = 29
+[flag] cycle 9172: int_flag <- 0
+[tbdev] cycle 9175: IRQ0_SET 1
+[tbdev] cycle 9177: irq0 = 1  (PLIC ID 35)
+[irq] #4 cycle 9215: M-mode interrupt cause 11 on retire of pc 00000005c0, priv 3 -> 3, mepc = 00000005c4, PC -> 000000082c (source up 37 cycles before)
+@@ irq4_src_to_trap_cycles = 37
+@@ irq4_trap_to_vector_retire_cycles = 8
+[flag] cycle 9265: int_flag <- 1
+[tbdev] cycle 9269: irq0 = 0  (CLR, 92 cycles high)
+@@ m3_int_flag_after_loop = 1
+@@ m3_irq_count = 1
+@@ m3_loop_mcycle = 7
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

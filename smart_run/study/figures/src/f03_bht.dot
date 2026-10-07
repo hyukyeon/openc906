@@ -1,0 +1,18 @@
+digraph G {
+  rankdir=LR; nodesep=0.4; ranksep=0.5;
+  graph [fontname="WenQuanYi Zen Hei", fontsize=13, labelloc=t, label="C906 BHT : 전역 히스토리(GHR)만으로 인덱싱 (aq_ifu_bht.v, BHT_16K)\n"];
+  node  [fontname="WenQuanYi Zen Hei", fontsize=11, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge  [fontname="WenQuanYi Zen Hei", fontsize=10];
+  ghr  [label="bht_ghr[13:0]  (확정)\nBJU 가 분기 판정 시 shift-in\n{ghr, iu_ifu_bht_taken}"];
+  vghr [label="bht_vghr[13:0]  (투기)\nIP 단계 예측 결과로 shift-in\nmispredict 시 ghr 로 복구"];
+  ghr -> vghr [label="복구", style=dashed];
+  row  [label="행 선택 (미리 읽기)\nidx = vghr[11:2]  → 1024 행\n(직전 분기 시점에 SRAM 읽기 시작)"];
+  sram [label="SRAM 1024 x 16bit\n한 행 = 2bit 카운터 8개\n[15:8] = 방향 비트, [7:0] = 강도 비트", shape=box3d, fillcolor="#fff7e0", color="#b08a2e"];
+  col  [label="열 선택 (현재 분기, IP 단계)\nsel = vghr[2:0]  → 8 중 1\n(gshare_lite 패치: ^ PC[3:1])"];
+  out  [label="bht_pred_rslt[1:0]\n[1]=1 이면 taken 예측", fillcolor="#e8f4e8", color="#4a8f4a"];
+  vghr -> row -> sram -> col -> out;
+  pc [label="pred_bht_pc[2:0] = PC[3:1]\n원본 RTL: 선언만 되고 미사용", fillcolor="#fde9e7", color="#c0504d"];
+  pc -> col [style=dotted, label="패치 시 XOR"];
+  upd [label="갱신 (BJU 판정 후 FSM)\n2-bit 포화 카운터 +/-\n쓰기 행 = ref_ghr[13:4], 열 = ref_ghr[2:0]", fillcolor="#f6f6f6"];
+  upd -> sram;
+}

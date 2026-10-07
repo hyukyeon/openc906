@@ -1,0 +1,27 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ lrsc_sc_result(0=ok) = 0
+@@ lrsc_mem_after = 111
+@@ sc_alone_result = 1
+@@ sc_alone_mem_after = 111
+@@ lr_sd_sc_result = 0
+@@ lr_sd_sc_mem_after = 333
+@@ amoadd_old = 10
+@@ amoswap_old = 15
+@@ amomax_old = 5
+@@ mem_final = 77
+@@ amoadd_cycles = 5
+@@ ld_add_sd_cycles = 8
+@@ fence_rw_rw_cycles = 4
+@@ small_func_warm_cycles = 13
+@@ fence_i_cycles = 812
+@@ small_func_after_fence_i_cycles = 26
+@@ icache_miss_after_fence_i = 3
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

@@ -1,0 +1,21 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ depth1_cycles = 14
+@@ depth2_cycles = 23
+@@ depth3_cycles = 37
+@@ depth4_cycles = 45
+@@ depth5_cycles = 57
+@@ depth6_cycles = 69
+@@ depth7_cycles = 91
+@@ depth8_cycles = 91
+@@ direct_call_x32_cycles = 238
+@@ indirect_call_x32_cycles = 332
+@@ direct_call_x32_ras_off_cycles = 297
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

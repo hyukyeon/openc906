@@ -1,0 +1,14 @@
+digraph G {
+  rankdir=LR; nodesep=0.35;
+  graph [fontname="WenQuanYi Zen Hei", fontsize=13, labelloc=t, label="RAS : 4-entry 원형 버퍼, 포인터 2개 (aq_ifu_ras.v)\n"];
+  node  [fontname="WenQuanYi Zen Hei", fontsize=11, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge  [fontname="WenQuanYi Zen Hei", fontsize=10];
+  subgraph cluster_ring { label="entry 0..3 : PC[23:0] 만 저장 (상위 비트는 현재 PC 에서)"; fontsize=11; color="#4a6fa5";
+    e0 [label="entry0"]; e1 [label="entry1"]; e2 [label="entry2"]; e3 [label="entry3"];
+    e0 -> e1 -> e2 -> e3 -> e0 [arrowsize=0.6];
+  }
+  pop [label="ras_pop (투기 top)\nIP 에서 push(jal/jalr rd=ra) / pop(ret)", fillcolor="#fff7e0", color="#b08a2e"];
+  bju [label="ras_bju (확정 top)\nBJU 가 link/ret 판정할 때 이동", fillcolor="#e8f4e8", color="#4a8f4a"];
+  rep [label="mispredict / flush :\nras_pop ← ras_bju (포인터만 복구)\n엔트리 내용은 복구 안 됨\n→ wrong-path push 가 오래된 주소를 덮어쓸 수 있다 (p2_fe04 MARK 4)", fillcolor="#fde9e7", color="#c0504d"];
+  pop -> e2 [style=dashed]; bju -> e1 [style=dashed]; rep -> pop;
+}

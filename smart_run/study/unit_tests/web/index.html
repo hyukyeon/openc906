@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C906 Waves</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #5d6673; --line: #dfe3e8;
+    --accent: #2f6fdb; --accent-text: #ffffff; --chip: #eef1f5;
+    --pass: #1a7f37; --pass-bg: #dcf3e3; --fail: #b42318; --fail-bg: #fde4e1;
+    --variant: #7a4cc2; --variant-bg: #efe7fb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15181c; --card: #1e2227; --text: #e6e9ed; --muted: #9aa4b1; --line: #2e343b;
+      --accent: #5b93f0; --accent-text: #0d1117; --chip: #272c33;
+      --pass: #57d07a; --pass-bg: #163222; --fail: #ff8a7a; --fail-bg: #3a1a17;
+      --variant: #c3a2f5; --variant-bg: #2c2240;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", "Noto Sans KR", sans-serif;
+  }
+  main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 16px; }
+  h1 { font-size: 22px; margin: 0; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .bar { display: flex; gap: 8px; margin-bottom: 16px; }
+  input[type=search] {
+    flex: 1; min-width: 0; padding: 9px 12px; font: inherit; color: var(--text);
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  }
+  button, .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 14px; font: inherit; font-size: 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--card); color: var(--text); text-decoration: none;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0;
+  }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .name { font: 600 15px/1.3 ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  .badge { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; }
+  .PASS { color: var(--pass); background: var(--pass-bg); }
+  .FAIL { color: var(--fail); background: var(--fail-bg); }
+  .variant { color: var(--variant); background: var(--variant-bg); }
+  .title { font-size: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { font-size: 12px; color: var(--muted); background: var(--chip); padding: 1px 8px; border-radius: 6px; }
+  .meta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 4px; }
+  .actions .btn:not(.primary) { padding: 7px 9px; font-size: 13px; color: var(--muted); }
+  .empty { color: var(--muted); padding: 24px 0; }
+  .card details.marks { margin: 0; font-size: 13px; }
+  .marks summary { color: var(--muted); }
+  .marks ul { list-style: none; padding: 0; margin: 6px 0 0; display: flex; flex-direction: column; gap: 5px; }
+  .marks li { display: flex; gap: 8px; align-items: baseline; }
+  .mlinks { display: inline-flex; flex-wrap: wrap; gap: 3px; flex: none; max-width: 42%; }
+  .mlink {
+    font: 600 12px/1.6 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--accent);
+    background: var(--chip); padding: 0 6px; border-radius: 5px; text-decoration: none;
+  }
+  .mdesc { color: var(--text); min-width: 0; overflow-wrap: anywhere; }
+  details { margin-top: 28px; color: var(--muted); font-size: 14px; }
+  summary { cursor: pointer; color: var(--text); }
+  details ul { padding-left: 20px; }
+  code, kbd { font: 13px ui-monospace, Menlo, Consolas, monospace; background: var(--chip); padding: 0 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>C906 Waves</h1>
+    <span class="sub">OpenC906 유닛 테스트 파형 · Surfer 웹 뷰어</span>
+  </header>
+
+  <div class="bar">
+    <input id="q" type="search" placeholder="테스트 이름, 설명, 신호 그룹으로 찾기" autocomplete="off">
+    <button id="reload" type="button" title="목록 새로고침">새로고침</button>
+  </div>
+
+  <div id="list" class="grid"></div>
+
+  <details>
+    <summary>Surfer 사용법</summary>
+    <ul>
+      <li><b>신호 추가</b>: 왼쪽 위 <i>Scopes</i>에서 <code>study_probe</code>를 고르고, 아래 <i>Variables</i>에서 신호를 누릅니다.</li>
+      <li><b>표시 형식</b>: 파형 영역의 신호 이름을 우클릭(길게 누르기)한 뒤 <i>Format</i>에서 고릅니다. 32비트 명령어 신호는 <code>RV64</code>로 디코딩할 수 있습니다.</li>
+      <li><b>명령 팔레트</b>: <kbd>Space</kbd>를 누르면 <code>variable_add</code>, <code>zoom_fit</code> 같은 명령을 입력할 수 있습니다.</li>
+      <li><b>이동</b>: 위쪽 툴바의 확대/축소/전체 보기 버튼을 쓰거나 <kbd>Ctrl</kbd>+휠로 확대합니다.</li>
+      <li><b>MARK</b>: 처음 화면은 MARK 1 앞부분입니다. 그 구간 안에 trap(예외/인터럽트)이 있으면 첫 trap(인터럽트가 있으면 첫 인터럽트)의 앞 44 ~ 뒤 20 사이클을 보여 줍니다. 테스트의 MARK마다 마커 <code>M1</code>, <code>M2</code>…가 찍혀 있고, 명령 팔레트에서 <code>goto_marker M2</code>로 이동합니다.</li>
+      <li><b>MARK 구간</b>: 카드의 <i>MARK 구간</i>을 펼치면 테스트 소스 머리 주석의 MARK 설명이 나옵니다. <code>M2</code> 같은 링크를 누르면 그 MARK 구간(또는 그 안의 첫 trap)으로 확대해서 엽니다.</li>
+      <li>처음 띄우는 신호는 각 테스트의 <code>.gtkw</code>에서 가져옵니다. 시뮬레이션을 다시 돌리면 새로고침만 하면 됩니다(FST는 자동으로 다시 만듭니다).</li>
+    </ul>
+  </details>
+</main>
+
+<script>
+  const list = document.getElementById('list');
+  const q = document.getElementById('q');
+  let tests = [];
+
+  const mb = n => n == null ? '' : (n >= 1 << 20 ? (n / (1 << 20)).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
+  const when = s => {
+    const d = new Date(s * 1000), p = n => String(n).padStart(2, '0');
+    return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+
+  // mark : 이 MARK 구간으로 확대해서 연다 (없으면 첫 MARK)
+  function surferUrl(t, mark) {
+    const base = new URL('.', location.href);
+    const name = encodeURIComponent(t.name);
+    const wave = new URL(`waves/${name}.fst`, base).href;
+    const cmds = new URL(mark == null ? `cmds/${name}.sucl` : `cmds/${name}/m${mark}.sucl`, base).href;
+    // 폰처럼 좁은 화면에서는 Scopes/Variables 패널을 접어서 연다 (View 메뉴에서 다시 펼 수 있다)
+    const startup = 'run_command_file_from_url ' + cmds + (innerWidth < 700 ? '; toggle_side_panel' : '');
+    return 'surfer/index.html?load_url=' + encodeURIComponent(wave) +
+      '&startup_commands=' + encodeURIComponent(startup);
+  }
+
+  function card(t) {
+    const c = el('article', 'card');
+    const head = el('div', 'row');
+    head.append(el('span', 'name', t.stem));
+    if (t.variant) head.append(el('span', 'badge variant', t.variant));
+    if (t.result) head.append(el('span', 'badge ' + t.result, t.result));
+    c.append(head);
+    if (t.title) c.append(el('div', 'title', t.title));
+    if (t.groups.length) {
+      const chips = el('div', 'chips');
+      t.groups.forEach(g => chips.append(el('span', 'chip', g.replace(/\s*[:(].*$/, ''))));
+      c.append(chips);
+    }
+    if (t.marks && t.marks.length) {
+      const d = el('details', 'marks');
+      d.append(el('summary', null, `MARK 구간 ${t.marks.length}개`));
+      const ul = el('ul');
+      t.marks.forEach(m => {
+        const li = el('li');
+        const links = el('span', 'mlinks');
+        m.ns.forEach(n => {
+          const a = el('a', 'mlink', 'M' + n);
+          a.href = surferUrl(t, n);
+          a.title = `MARK ${n} 구간으로 확대해서 열기`;
+          links.append(a);
+        });
+        li.append(links, el('span', 'mdesc', m.desc));
+        ul.append(li);
+      });
+      d.append(ul);
+      c.append(d);
+    }
+    const fst = t.fst_size != null ? `FST ${mb(t.fst_size)}` : 'FST는 처음 열 때 변환';
+    c.append(el('div', 'meta', `VCD ${mb(t.vcd_size)} · ${fst} · ${when(t.mtime)}`));
+    const acts = el('div', 'actions');
+    const open = el('a', 'btn primary', '파형 열기');
+    open.href = surferUrl(t);
+    acts.append(open);
+    t.files.forEach(k => {
+      const a = el('a', 'btn', k);
+      a.href = `files/${encodeURIComponent(t.name)}/${k}`;
+      acts.append(a);
+    });
+    c.append(acts);
+    c.dataset.search = [t.name, t.title, ...t.groups, ...(t.marks || []).map(m => m.desc)].join(' ').toLowerCase();
+    return c;
+  }
+
+  function render() {
+    const words = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+    const cards = tests.map(card).filter(c => words.every(w => c.dataset.search.includes(w)));
+    list.replaceChildren(...cards);
+    if (!cards.length) list.append(el('div', 'empty', tests.length ? '맞는 테스트가 없습니다.' : 'out/ 에 VCD 가 없습니다. make run T=<test> 로 먼저 실행하세요.'));
+  }
+
+  async function load() {
+    try {
+      const r = await fetch('api/tests', { cache: 'no-store' });
+      tests = await r.json();
+    } catch (e) {
+      tests = [];
+      list.replaceChildren(el('div', 'empty', '목록을 불러오지 못했습니다: ' + e));
+      return;
+    }
+    render();
+  }
+
+  q.addEventListener('input', render);
+  document.getElementById('reload').addEventListener('click', load);
+  load();
+</script>
+</body>
+</html>

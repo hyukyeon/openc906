@@ -1,0 +1,15 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ const_cycles = 2842
+@@ const_mispred = 7
+@@ rand_cycles = 3517
+@@ rand_mispred = 217
+@@ rand_taken = 123
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

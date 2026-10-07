@@ -1,0 +1,19 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+[u00] hello from C906
+@@ four_addi_cycles = 7
+@@ misa_hex_as_dec = 9223372036864479533
+@@ misa_ext_bits = 9703725
+@@ misa_V(vector) = 0
+@@ mvendorid = 1463
+@@ marchid = 0
+@@ mimpid = 0
+@@ mhartid = 0
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

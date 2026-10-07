@@ -1,0 +1,64 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+[tbdev] cycle 2792: IRQ0_SET 40
+[tbdev] cycle 2833: irq0 = 1  (PLIC ID 35)
+[irq] #1 cycle 2866: M-mode interrupt cause 11 on retire of pc 0000000420, priv 3 -> 3, mepc = 0000000424, PC -> 00000015ac (source up 32 cycles before)
+@@ irq1_src_to_trap_cycles = 32
+@@ irq1_trap_to_vector_retire_cycles = 21
+[tbdev] cycle 3154: irq0 = 0  (CLR, 321 cycles high)
+@@ m1_irq_count = 1
+@@ m1_cause_history = 11
+@@ m1_mcause = 9223372036854775819
+@@ m1_mepc_index_in_busy = 46
+@@ m1_mstatus_MPP_at_entry(3=M) = 3
+@@ m1_mstatus_MPIE_at_entry = 1
+@@ m1_mstatus_MIE_at_entry = 0
+@@ m1_claim_id = 35
+@@ m1_busy_count = 200
+[tbdev] cycle 7617: IRQ0_SET 40
+[tbdev] cycle 7658: irq0 = 1  (PLIC ID 35)
+[irq] #2 cycle 7697: S-mode interrupt cause 9 on retire of pc 00000008c4, priv 1 -> 1, sepc = 00000008c8, PC -> 0000001664 (source up 38 cycles before)
+@@ irq2_src_to_trap_cycles = 38
+@@ irq2_trap_to_vector_retire_cycles = 21
+[tbdev] cycle 7784: irq0 = 0  (CLR, 126 cycles high)
+@@ s2_irq_count = 1
+@@ s2_cause_history = 9
+@@ s2_scause = 9223372036854775817
+@@ s2_sepc_index_in_busy = 43
+@@ s2_sstatus_SPP_at_entry(1=S) = 1
+@@ s2_sstatus_SPIE_at_entry = 1
+@@ s2_sstatus_SIE_at_entry = 0
+@@ s2_claim_id = 35
+@@ s2_busy_count = 200
+[tbdev] cycle 12164: IRQ0_SET 40
+[tbdev] cycle 12205: irq0 = 1  (PLIC ID 35)
+[irq] #3 cycle 12245: M-mode interrupt cause 11 on retire of pc 0000000d84, priv 1 -> 3, mepc = 0000000d88, PC -> 00000015ac (source up 39 cycles before)
+@@ irq3_src_to_trap_cycles = 39
+@@ irq3_trap_to_vector_retire_cycles = 6
+[tbdev] cycle 12294: irq0 = 0  (CLR, 89 cycles high)
+@@ m3_irq_count = 1
+@@ m3_mcause = 9223372036854775819
+@@ m3_mepc_index_in_busy = 44
+@@ m3_mstatus_MPP_at_entry(1=S) = 1
+@@ m3_mstatus_MPIE_at_entry = 0
+@@ m3_busy_count = 200
+[tbdev] cycle 15564: IRQ0_SET 10
+[tbdev] cycle 15575: irq0 = 1  (PLIC ID 35)
+[irq] #4 cycle 15961: S-mode interrupt cause 9 on retire of pc 0000001460, priv 1 -> 1, sepc = 0000001480, PC -> 0000001664 (source up 385 cycles before)
+@@ irq4_src_to_trap_cycles = 385
+@@ irq4_trap_to_vector_retire_cycles = 6
+[tbdev] cycle 16013: irq0 = 0  (CLR, 438 cycles high)
+@@ m4_mip_SEIP_while_in_M = 1
+@@ m4_irq_count_while_in_M = 0
+@@ m4_irq_count_after_mret_to_S = 1
+@@ m4_scause = 9223372036854775817
+@@ m4_sepc_minus_s_part4 = 0
+@@ m4_busy_count = 204
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

@@ -1,0 +1,19 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ m_store_unlocked_readback = 4660
+@@ m_store_unlocked_mcause(0=none) = 0
+@@ u_load_value = 4660
+@@ u_store_mcause = 7
+@@ u_store_mtval_minus_page = 8
+@@ m_store_locked_before_sfence_mcause = 0
+@@ m_store_locked_after_sfence_mcause = 7
+@@ pmpaddr0_change_after_lock(0=ignored) = 0
+@@ pmpcfg0_entry0 = 153
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish
