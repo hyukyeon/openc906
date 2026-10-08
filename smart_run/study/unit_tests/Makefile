@@ -9,6 +9,7 @@
 #   make wave T=<test>       : GTKWave 로 결과 열기 (테스트별 gtkw 세이브 파일 사용)
 #   make web                 : 브라우저 파형 뷰어(Surfer) 시작 -> tailnet 의 https://<host>:10000/
 #   make web-stop            : 브라우저 파형 뷰어 중지
+#   make site                : 서버 없이 열리는 정적 사이트로 내보내기 -> $(SITE) (GitHub Pages 저장소)
 #   make clean
 #
 # 옵션
@@ -44,7 +45,7 @@ VSIM          := build/verilator$(SFX)/obj/Vsim
 VVP           := build/study$(SFX).vvp
 SIM_BIN       := $(if $(filter iverilog,$(SIM)),$(VVP),$(VSIM))
 
-.PHONY: sim run all list wave web web-stop clean
+.PHONY: sim run all list wave web web-stop site clean
 .DEFAULT_GOAL := list
 
 list:
@@ -138,6 +139,13 @@ wave:
 
 web:
 	@$(PYTHON) tools/wave_web.py start
+
+# 정적 사이트 (tools/wave_web.py export). SITE 는 별도 git 저장소(GitHub Pages)의 작업 디렉터리
+SITE          ?= $(abspath $(SMART_RUN)/../../openc906-waves)
+SITE_REPO     ?= https://github.com/hyukyeon/openc906/tree/study/smart_run/study
+
+site:
+	@$(PYTHON) tools/wave_web.py export $(SITE) --repo $(SITE_REPO)
 
 web-stop:
 	@$(PYTHON) tools/wave_web.py stop

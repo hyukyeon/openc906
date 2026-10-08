@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="wave-mode" content="server">
+<meta name="wave-repo" content="">
 <title>C906 Waves</title>
 <style>
   :root {
@@ -102,6 +104,10 @@
 </main>
 
 <script>
+  // server : tools/wave_web.py 가 띄운 서버 (api/tests, files/<test>/<kind>)
+  // static : wave_web.py export 로 만든 정적 사이트 (tests.json, files/<test>/<kind>.txt)
+  const STATIC = document.querySelector('meta[name=wave-mode]').content === 'static';
+  const REPO = document.querySelector('meta[name=wave-repo]').content;
   const list = document.getElementById('list');
   const q = document.getElementById('q');
   let tests = [];
@@ -163,14 +169,14 @@
       c.append(d);
     }
     const fst = t.fst_size != null ? `FST ${mb(t.fst_size)}` : 'FST는 처음 열 때 변환';
-    c.append(el('div', 'meta', `VCD ${mb(t.vcd_size)} · ${fst} · ${when(t.mtime)}`));
+    c.append(el('div', 'meta', STATIC ? `${fst} · ${when(t.mtime)}` : `VCD ${mb(t.vcd_size)} · ${fst} · ${when(t.mtime)}`));
     const acts = el('div', 'actions');
     const open = el('a', 'btn primary', '파형 열기');
     open.href = surferUrl(t);
     acts.append(open);
     t.files.forEach(k => {
       const a = el('a', 'btn', k);
-      a.href = `files/${encodeURIComponent(t.name)}/${k}`;
+      a.href = `files/${encodeURIComponent(t.name)}/${k}` + (STATIC ? '.txt' : '');
       acts.append(a);
     });
     c.append(acts);
@@ -187,7 +193,7 @@
 
   async function load() {
     try {
-      const r = await fetch('api/tests', { cache: 'no-store' });
+      const r = await fetch(STATIC ? 'tests.json' : 'api/tests', { cache: 'no-store' });
       tests = await r.json();
     } catch (e) {
       tests = [];
@@ -197,6 +203,20 @@
     render();
   }
 
+  if (STATIC) {
+    document.getElementById('reload').hidden = true;
+    const foot = el('p', 'sub');
+    foot.append('시뮬레이션 결과를 미리 변환해 올린 정적 사이트입니다. ');
+    if (REPO) {
+      const a = el('a', null, '소스 저장소');
+      a.href = REPO;
+      foot.append(a, ' · ');
+    }
+    const lic = el('a', null, 'Surfer (EUPL-1.2)');
+    lic.href = 'surfer/LICENSE-EUPL-1.2.txt';
+    foot.append(lic);
+    document.querySelector('main').append(foot);
+  }
   q.addEventListener('input', render);
   document.getElementById('reload').addEventListener('click', load);
   load();

@@ -44,3 +44,12 @@ make run T=... SIM=iverilog      # 원본 시뮬레이터 (느림)
 - 카드의 *MARK 구간* 을 펼치면 테스트 헤더의 `MARK n : 설명` 이 나오고, `M2` 같은 링크가 그 MARK 구간으로 확대해서 연다 (`cmds/<T>/m<n>.sucl`).
 - 서버는 127.0.0.1:18906 에만 열리고 `tailscale serve --https=10000` (tailnet 전용, funnel 아님) 으로만 밖에서 접근한다. 재부팅 후에는 `make web` 을 다시 실행.
 - Surfer 웹 빌드는 처음 실행할 때 `web/surfer/` 로 받는다 (GitLab main 브랜치 CI 산출물). 갱신: `tools/wave_web.py fetch`.
+
+정적 사이트 (`make site`, 서버 없이 보기)
+- 공개 사이트: https://hyukyeon.github.io/openc906-waves/ (저장소 `hyukyeon/openc906-waves`, GitHub Pages).
+- `make site` 가 서버가 하던 일(FST 변환, gtkw → Surfer 명령, 테스트 목록)을 미리 해서 `../../../../openc906-waves`(`SITE=` 로 변경)에 쓴다. 그 디렉터리에서 commit/push 하면 Pages 가 다시 배포한다.
+  ```
+  make all && make site
+  cd ../../../../openc906-waves && git add -A && git commit -m "Update waves" && git push
+  ```
+- Pages 는 헤더를 설정할 수 없지만 Surfer 의 `sw.js` 가 필요한 헤더를 붙인다. 텍스트 파일은 `files/<T>/<kind>.txt` 로 올라간다 (Pages 는 확장자로 MIME 을 정한다).

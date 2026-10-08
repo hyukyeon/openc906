@@ -6,6 +6,7 @@
       wave_web.py fetch                     : Surfer 웹 빌드 다운로드 -> web/surfer/
       wave_web.py sucl <x.gtkw> [x.vcd] [--mark N] : gtkw -> Surfer 명령 파일 출력 (확인용)
       wave_web.py marks <test>              : 테스트 소스의 MARK 설명 (확인용)
+      wave_web.py export <dir> [--repo URL] : 서버 없이 열리는 정적 사이트로 내보내기 (GitHub Pages 용)
 
   * VCD 는 요청 시 vcd2fst 로 FST 로 바꿔 VCD 옆에 캐시한다 (VCD 가 더 새로우면 다시 변환).
     47MB VCD -> 약 0.6MB FST 라서 태블릿/폰에서도 바로 열린다.
@@ -48,6 +49,7 @@ LOG_FILE = WEB_DIR / "server.log"
 
 PORT = int(os.environ.get("WAVE_WEB_PORT", 18906))
 HTTPS_PORT = int(os.environ.get("WAVE_WEB_HTTPS_PORT", 10000))
+SURFER_LICENSE_URL = "https://gitlab.com/surfer-project/surfer/-/raw/main/LICENSE-EUPL-1.2.txt"
 SURFER_URL = ("https://gitlab.com/surfer-project/surfer/-/jobs/artifacts/main/"
               "download?job=wasm_artifacts")
 
@@ -493,6 +495,59 @@ def fetch_surfer():
     print(f"  -> {SURFER_DIR}")
 
 
+def export(dest, repo=None):
+    """정적 사이트로 내보낸다. 서버가 하던 일(VCD -> FST, gtkw -> Surfer 명령, 목록 API)을 미리 해 둔다.
+
+      index.html             : web/index.html (wave-mode = static -> tests.json 을 읽는다)
+      tests.json             : /api/tests 와 같은 내용
+      waves/<name>.fst       : 파형
+      cmds/<name>.sucl, cmds/<name>/m<n>.sucl : 처음 띄울 신호 + MARK 별 확대
+      files/<name>/<kind>.txt : source / pipeview / objdump / console  (Pages 는 확장자로 MIME 을 정한다)
+      surfer/                : Surfer 웹 빌드 (.gz 제외, Pages 가 알아서 압축) + EUPL 라이선스
+    dest 안의 .git 과 README.md 는 남기고 나머지는 지우고 다시 만든다.
+    """
+    dest = Path(dest).resolve()
+    if dest == UT_DIR or UT_DIR in dest.parents:
+        sys.exit(f"export: {dest} 는 unit_tests 밖이어야 한다")
+    if not (SURFER_DIR / "index.html").exists():
+        fetch_surfer()
+    dest.mkdir(parents=True, exist_ok=True)
+    for f in dest.iterdir():
+        if f.name in (".git", "README.md"):
+            continue
+        shutil.rmtree(f) if f.is_dir() else f.unlink()
+    tests = []
+    for t in list_tests():
+        vcd, gtkw = test_files(t["name"])
+        fst, info = ensure_derived(vcd)
+        name = t["name"]
+        (dest / "waves").mkdir(exist_ok=True)
+        shutil.copy2(fst, dest / "waves" / f"{name}.fst")
+        (dest / "cmds" / name).mkdir(parents=True, exist_ok=True)
+        sucl = lambda focus: "\n".join(gtkw_to_sucl(gtkw, info, focus) if gtkw else ["zoom_fit"]) + "\n"
+        (dest / "cmds" / f"{name}.sucl").write_text(sucl(None))
+        for n in sorted({m[0] for m in info.get("marks", [])}):
+            (dest / "cmds" / name / f"m{n}.sucl").write_text(sucl(n))
+        (dest / "files" / name).mkdir(parents=True, exist_ok=True)
+        for k in t["files"]:
+            shutil.copy2(text_file(name, k), dest / "files" / name / f"{k}.txt")
+        t["fst_size"] = fst.stat().st_size
+        tests.append(t)
+        print(f"  {name}: fst {t['fst_size'] // 1024} KB, marks {len(info.get('marks', []))}")
+    (dest / "tests.json").write_text(json.dumps(tests, ensure_ascii=False))
+    html = (WEB_DIR / "index.html").read_text()
+    html = html.replace('<meta name="wave-mode" content="server">', '<meta name="wave-mode" content="static">')
+    if repo:
+        html = html.replace('<meta name="wave-repo" content="">', f'<meta name="wave-repo" content="{repo}">')
+    (dest / "index.html").write_text(html)
+    shutil.copytree(SURFER_DIR, dest / "surfer", ignore=shutil.ignore_patterns("*.gz"))
+    with urllib.request.urlopen(SURFER_LICENSE_URL, timeout=60) as r:
+        (dest / "surfer" / "LICENSE-EUPL-1.2.txt").write_bytes(r.read())
+    (dest / ".nojekyll").write_text("")
+    total = sum(f.stat().st_size for f in dest.rglob("*") if f.is_file() and ".git" not in f.parts)
+    print(f"  -> {dest}  ({len(tests)} tests, {total / (1 << 20):.1f} MB)")
+
+
 def serve(port):
     if not (SURFER_DIR / "index.html").exists():
         fetch_surfer()
@@ -579,11 +634,16 @@ def main():
     p.add_argument("--mark", type=int, help="이 MARK 구간으로 확대")
     p = sub.add_parser("marks")
     p.add_argument("stem")
+    p = sub.add_parser("export")
+    p.add_argument("dest")
+    p.add_argument("--repo", help="소스 저장소 URL (페이지 아래에 링크)")
     a = ap.parse_args()
     if a.cmd == "serve":
         serve(a.port)
     elif a.cmd == "sucl":
         print("\n".join(gtkw_to_sucl(a.gtkw, scan_vcd(a.vcd) if a.vcd else None, a.mark)))
+    elif a.cmd == "export":
+        export(a.dest, a.repo)
     elif a.cmd == "marks":
         print(json.dumps(test_marks(a.stem), ensure_ascii=False, indent=1))
     else:
