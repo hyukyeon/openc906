@@ -133,6 +133,45 @@ LR/SC/AMO 의 의미와 실측은 부록 A 의 7 절. RTL: AMO 는 IDU split →
 
 ---
 
+### 2.7 Write-back — dirty 라인 교체와 캐시 명령 (`p4_mem05_writeback`)
+
+D-Cache는 write-back이라 store가 메모리에 바로 가지 않고 캐시 라인만 고친다(dirty). 그 라인이 **쫓겨날 때** 또는 **캐시 명령으로 clean할 때** 비로소 메모리에 쓰인다. 이 일은 victim buffer(VB)가 맡고, 64B 라인 하나를 AXI 쓰기 버스트 한 번으로 보낸다.
+
+```verilog
+// aq_lsu_vb.v:463-468 - 라인 시작 주소부터 16B x 4 beat, INCR
+assign lsu_biu_vb_awaddr[39:0] = {vb_addr[33:0], 6'b0};
+assign lsu_biu_vb_awsize[2:0]  = 3'b100;   // 16B
+assign lsu_biu_vb_awlen[1:0]   = 2'b11;    // 4 beat
+// lsu_biu_vb_awburst = 2'b01 (INCR, aq_lsu_vb.v:469)
+```
+
+| MARK | 하는 일 | 측정 (cycles) | 버스에서 보이는 것 |
+|---|---|---|---|
+| 1 | set A(addr[12:6] = 0)의 4 way에 `sd` (8KB 간격) | 78 | refill 읽기(AR WRAP) 4번, AW 없음. 라인 4개가 dirty |
+| 2 | set A에 5번째 라인 `ld` | **246** | FIFO로 A0 교체 → **AW 4 beat(write-back)** + AR(refill)이 같은 사이클에 나간다 |
+| 3 | set B(clean 라인 4개)에 5번째 `ld` | **21** | clean 교체: AR만, AW 없음 |
+| 4 | `th.dcache.cva` A1 + `th.sync` | 25 | 교체 없이 dirty 라인만 메모리로: AW 4 beat |
+
+검증: D-Cache를 끄고 메모리를 직접 읽으면 A0 = 0xA0(교체로 써짐), A1 = 0xA1(cva로 써짐)이다.
+
+![dirty 라인 교체 - write-back 과 refill](../figures/wave_wb_evict.png)
+
+| cycle | 일어난 일 |
+|---|---|
+| 3569 | AW(0x10000 = 쫓겨나는 A0, `awlen = 3`, `awburst = 1` INCR)와 AR(0x18000 = 새 라인 A4)이 함께 나간다 |
+| 3570~3573 | W 4 beat가 연속으로 나간다(`wvalid = wready = 1`, 마지막에 `wlast`) |
+| 3574 | B 응답. write-back 자체는 6 사이클에 끝난다 |
+| 3570 | `axi_fifo`가 refill 읽기를 넘기려 했지만 interconnect가 쓰기 처리 중이라 `ic_arready = 0` → 기회를 놓쳤다 |
+| 3771 | 약 200 사이클 뒤 다음 기회에 넘어가고(5절의 "줄 선 요청" 효과), 3773~3779에 refill 데이터가 온다 |
+
+- **dirty 교체 246 vs clean 교체 21 사이클**의 차이는 대부분 이 SoC 지연 모델 때문이다. 쓰기 버스트 자체는 6 사이클이고, 읽기가 그 쓰기와 부딪혀 약 200 사이클을 더 기다렸다. 실제 칩에서는 차이가 이보다 훨씬 작을 것이다(측정하지 않음).
+- dirty 교체에서도 **write-back과 refill은 동시에 출발한다.** VB가 쫓겨난 라인을 따로 들고 있으므로 refill이 write-back을 기다릴 필요가 없다.
+- **캐시 명령은 `fence`로 기다려지지 않는다.** 처음에 `th.dcache.cva` 뒤에 `fence`만 두었더니 5 사이클로 끝났고, 버스 쓰기는 MARK가 끝난 뒤에 나갔다. `th.sync`(T-Head 동기화 명령)를 두어야 쓰기가 끝날 때까지 기다린다(25 사이클).
+
+![th.dcache.cva + th.sync](../figures/wave_wb_cva.png)
+
+- T-Head 캐시 명령은 MXSTATUS.THEADISAEE(bit 22, 리셋 값 1)가 켜져 있어야 쓸 수 있다. 어셈블러에는 `.option arch, +xtheadcmo, +xtheadsync`로 알린다.
+
 ## 3. MMU — Sv39
 
 ### 3.1 구성
@@ -278,6 +317,7 @@ make run T=p4_mem01_dcache      # hit/miss, FIFO, prefetch, write-allocate
 make run T=p4_mem02_stb         # store-to-load forwarding
 make run T=p4_mem03_amo_fence   # LR/SC, AMO, fence, fence.i
 make run T=p4_mem04_sv39        # Sv39, PTW, page fault, alias
+make run T=p4_mem05_writeback   # dirty 교체 write-back, clean 교체, th.dcache.cva
 python3 tools/vcd_query.py out/p4_mem01_dcache/p4_mem01_dcache.vcd --mark 1 \
     --signals bus_arvalid,bus_arready,ic_arvalid,ic_arready,bus_araddr,bus_arlen,bus_rvalid,bus_rlast,lsu_ld_data_vld
 ```
@@ -297,6 +337,10 @@ python3 tools/vcd_query.py out/p4_mem01_dcache/p4_mem01_dcache.vcd --mark 1 \
 - [ ] `lsu_dc_pa` 로 PTW 가 읽는 3 개 주소를 찾고 VPN 계산과 맞춘다
 - [ ] page fault 두 종류의 mcause/mtval 을 확인한다
 - [ ] (실험) 테스트의 MAEE 설정을 끄고 S-mode 접근 사이클이 어떻게 변하는지 본다
+
+### Lab 4.5: Write-back
+- [ ] `p4_mem05` MARK 2에서 AW와 AR이 같은 사이클에 나가는 것을 확인하고, 왜 refill이 write-back을 기다리지 않는지 설명한다
+- [ ] MARK 4에서 `th.sync`를 `fence`로 바꾸면 사이클과 버스 쓰기 시점이 어떻게 바뀌는지 예측하고 확인한다
 
 ---
 

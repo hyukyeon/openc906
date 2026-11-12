@@ -76,3 +76,10 @@ $S out/p8_bus01_amba --from-cycle 2945 --to-cycle 2956 --pad 0 --height 700 \
 $S out/p8_bus01_amba --from-cycle 2988 --to-cycle 3022 --pad 0 --height 560 \
   --signals "clk,cycle,-CPU 내부 APB (BIU apbif),capb_psel_plic,capb_penable,capb_paddr,capb_pwrite,capb_pwdata,capb_prdata_plic,-AXI (조용함),bus_arvalid,bus_awvalid,-Retire,asm_rt" \
   -o $FIG/wave_capb_plic.png
+# Phase 4 2.7 절 : dirty 라인 교체 write-back, th.dcache.cva (p4_mem05_writeback)
+$S out/p4_mem05_writeback --from-cycle 3566 --to-cycle 3580 --pad 0 --height 620 \
+  --signals "clk,cycle,-VB write-back (AXI 쓰기),bus_awvalid,bus_awready,bus_awaddr,bus_awlen,bus_awburst,bus_wvalid,bus_wready,bus_wlast,bus_bvalid,-Refill (AXI 읽기),bus_arvalid,bus_araddr,ic_arvalid,ic_arready" \
+  -o $FIG/wave_wb_evict.png
+$S out/p4_mem05_writeback --from-cycle 5026 --to-cycle 5060 --pad 0 --height 520 \
+  --signals "clk,cycle,mark,-Retire,asm_rt,-AXI 쓰기,bus_awvalid,bus_awaddr,bus_awlen,bus_wvalid,bus_wlast,bus_bvalid" \
+  -o $FIG/wave_wb_cva.png

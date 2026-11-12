@@ -425,7 +425,7 @@ smart_run/study/unit_tests/
 │   ├── study_tbdev.v     # TB 장치: SoC 외부 인터럽트 선 구동 (store 로 제어, Phase 5 6 절)
 │   ├── soc_overlay/      # SoC 파일 학습용 사본 (cpu_sub_system_axi.v: 외부 인터럽트 입력 추가, 원본과 한 줄 차이)
 │   └── sim_top.v         # Verilator 용 래퍼 (tb + study_probe + study_tbdev)
-├── tests/                # 테스트 20 개, 폴더 하나에 하나: tests/<test>/<test>.S
+├── tests/                # 테스트 21 개, 폴더 하나에 하나: tests/<test>/<test>.S
 │   └── p5_sys06_wfi_flag/ #   <test>.S + 실행 후 복사되는 <test>.objdump, console.log (git 에 함께 올라감)
 ├── tools/                # mk_asm_rom / mk_gtkw / pipeview / vcd_query / wave_snap / collect_results / wave_web
 ├── web/                  # 브라우저 파형 뷰어 (테스트 목록 index.html + Surfer WASM)

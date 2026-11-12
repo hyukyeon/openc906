@@ -20,9 +20,9 @@
 ## v2 에서 바뀐 것 (요약)
 
 - **RTL 대조 정정**: D-Cache 4-way / I·D-Cache FIFO 교체 / BHT 는 PC 없이 전역 히스토리만 사용 / BTB 는 16-entry L0 BTB / JALR 비예측 / line fill = AXI WRAP 4 beat / CLINT·PLIC 는 CPU top 안 / PA 40bit / V 확장 비활성
-- **유닛 테스트 20 개** (`unit_tests/`): Verilator 로 테스트당 약 1 초. 결과 수치 + VCD + GTKWave 세이브 파일 + 사이클 표(pipeview)
+- **유닛 테스트 21 개** (`unit_tests/`): Verilator 로 테스트당 약 1 초. 결과 수치 + VCD + GTKWave 세이브 파일 + 사이클 표(pipeview)
 - **RTL 발췌**(파일:라인)와 **실측 수치**를 각 Phase 본문에 넣었다
-- **그림**: 구조도 17 장(Graphviz 11 + matplotlib 6) + GTKWave 파형 캡처 22 장 (`figures/`, 재생성 스크립트 포함)
+- **그림**: 구조도 17 장(Graphviz 11 + matplotlib 6) + GTKWave 파형 캡처 24 장 (`figures/`, 재생성 스크립트 포함)
 - **부록 A/B** 신설
 
 ## Prerequisites
@@ -48,7 +48,7 @@
 # 학습용 유닛 테스트 (권장)
 cd openc906/smart_run/study/unit_tests
 make sim                      # 최초 1 회 Verilator 빌드 (약 3~4 분)
-make all                      # 20 개 테스트 → out/RESULTS.md
+make all                      # 21 개 테스트 → out/RESULTS.md
 make run T=p2_fe02_bp_loop    # 하나만, 결과/VCD/pipeview
 make wave T=p2_fe02_bp_loop   # GTKWave
 make web                      # 브라우저 파형 뷰어 (태블릿/폰, tailnet 전용) — Phase 1 의 7.3 절
@@ -76,6 +76,7 @@ make runcase CASE=ISA_INT SIM=iverilog
 | p4_mem02_stb | store-to-load forwarding | 4 |
 | p4_mem03_amo_fence | LR/SC, AMO, fence, fence.i | 4, 부록 A |
 | p4_mem04_sv39 | Sv39 walk, page fault, VIPT alias, MAEE | 4 |
+| p4_mem05_writeback | dirty 라인 교체 write-back(AXI 4 beat), clean 교체, `th.dcache.cva` + `th.sync` | 4 |
 | p5_sys01_priv_deleg | M/S/U 전환, medeleg | 5 |
 | p5_sys02_timer_irq | CLINT 타이머/SW 인터럽트, WFI | 5 |
 | p5_sys03_pmp | PMP, lock, sfence.vma | 5 |

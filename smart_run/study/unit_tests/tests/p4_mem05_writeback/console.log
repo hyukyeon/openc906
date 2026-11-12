@@ -1,0 +1,16 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ m1_four_store_miss_cycles = 78
+@@ m2_dirty_evict_load_cycles = 246
+@@ m3_clean_evict_load_cycles = 21
+@@ m4_dcache_cva_cycles = 25
+@@ mem_A0_after_evict = 160
+@@ mem_A1_after_cva = 161
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

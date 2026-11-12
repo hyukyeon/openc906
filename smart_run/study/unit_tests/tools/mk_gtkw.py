@@ -88,7 +88,7 @@ GROUPS = {
         ("bus_arvalid", 1, "b"), ("bus_arready", 1, "b"), ("bus_araddr", 40, "h"), ("bus_arlen", 8, "d"),
         ("bus_arburst", 2, "d"), ("ic_arvalid", 1, "b"), ("ic_arready", 1, "b"), ("bus_rvalid", 1, "b"), ("bus_rready", 1, "b"), ("bus_rdata_lo", 32, "h"),
         ("bus_rlast", 1, "b"), ("bus_rresp", 2, "d"),
-        ("bus_awvalid", 1, "b"), ("bus_awready", 1, "b"), ("bus_awaddr", 40, "h"), ("bus_awlen", 8, "d"),
+        ("bus_awvalid", 1, "b"), ("bus_awready", 1, "b"), ("bus_awaddr", 40, "h"), ("bus_awlen", 8, "d"), ("bus_awburst", 2, "d"),
         ("bus_wvalid", 1, "b"), ("bus_wready", 1, "b"), ("bus_wdata_lo", 32, "h"), ("bus_wstrb", 16, "h"),
         ("bus_wlast", 1, "b"), ("bus_bvalid", 1, "b"), ("bus_bready", 1, "b"), ("bus_bresp", 2, "d")]),
     "ahb": ("AHB (axi2ahb -> ahb)", [
