@@ -22,6 +22,7 @@
 
 - **retire 는 사이클당 1 개, 항상 프로그램 순서**. 그래서 예외가 정확하다(precise): 예외 명령 이전은 모두 반영, 이후는 모두 버림.
 - 한 명령이 EX1 에 있을 때 다음 사이클 retire 되는 것이 기본 (ALU: EX1 → RT). MUL 은 EX3 에서 결과, LOAD 는 EX2 에서 데이터.
+- retire 와 write-back 이 왜 다른 시점인지, retire 시점에 무엇이 정해지는지는 3.6 절.
 
 ---
 
@@ -272,6 +273,62 @@ assign int_vld = |int_vld_raw[14:0] && !dtu_rtu_int_mask && !dp_int_ex2_inst_spl
 | `iu_ifu_tar_pc_vld/_pc` | 분기 mispredict, JALR — RTU 를 거치지 않고 EX1 에서 바로 (3 cycle) |
 
 분기 mispredict 는 RTU 를 기다리지 않는다 — in-order 라 분기보다 앞선 명령은 이미 앞에 있고, 뒤 명령(ID/IP/IF)만 버리면 되기 때문.
+
+### 3.6 "순서대로 확정"의 의미와 retire 시점에 정해지는 것들
+
+**retire(확정)** 는 명령의 결과가 아키텍처 상태(레지스터, CSR, 메모리, 다음 PC)에 반영되어 더 이상 되돌릴 수 없게 되는 시점이다. 그 전까지는 flush 로 지울 수 있다.
+
+**어떤 순서인가 — 프로그램이 실제로 실행되어야 하는 순서(동적 program order)**
+
+- **fetch 순서와 다르다.** 예측이 틀린 경로의 명령도 fetch 되지만 retire 전에 flush 된다.
+- **바이너리에 적힌 순서와도 다르다.** taken 분기와 점프는 그 사이 명령을 건너뛴다. 루프는 같은 PC 가 여러 번 retire 된다.
+
+| 바이너리 순서 | `beq` 가 taken 일 때 retire 순서 |
+|---|---|
+| `A` → `beq x, y, C` → `B` → `C:` | `A`, `beq`, `C` (`B` 는 fetch 됐어도 retire 되지 않음) |
+
+파형의 `rt_pc` 가 바로 이 순서다(Phase 1 의 7.4 절).
+
+**C906 에서 retire 시점이 정해지는 방식**
+
+```verilog
+// aq_rtu_ctrl.v:142-148 - EX1 에 있는 명령을 맡은 유닛이 "complete" 를 올린다
+assign ctrl_ex1_cmplt = ctrl_ex1_alu_cmplt || ctrl_ex1_mul_cmplt || ctrl_ex1_bju_cmplt
+                     || ctrl_ex1_div_cmplt || ctrl_ex1_lsu_cmplt || ctrl_ex1_vec_cmplt
+                     || ctrl_ex1_cp0_cmplt;
+// aq_rtu_ctrl.v:162-168 (리셋 생략) - 한 사이클 뒤(EX2)가 retire
+always @(posedge cmplt_clk)  ctrl_ex2_cmplt <= ctrl_ex1_cmplt;
+assign ctrl_ex2_retire_vld = ctrl_ex2_cmplt;
+```
+
+- EX1 래치는 하나뿐이고 ID 는 프로그램 순서대로 한 사이클에 하나씩 보낸다. 그래서 EX1 에서 complete 되는 순서가 곧 프로그램 순서이고, retire 도 저절로 순서대로 된다. out-of-order 코어처럼 순서를 다시 맞추는 ROB 가 필요 없다.
+- 여기서 **complete 는 "결과가 나왔다"가 아니라 "이 명령은 더 이상 예외를 내지 않는다(확정해도 된다)"** 에 가깝다. 유닛별 조건은 다음과 같다.
+
+| 유닛 | EX1 에서 complete 하는 조건 | 결과를 레지스터에 쓰는 시점 |
+|---|---|---|
+| ALU · BJU | EX1 에서 계산이 끝나면 | 바로 다음 사이클 (wb0) |
+| MUL | `iu_rtu_ex1_mul_cmplt` (`aq_iu_mul.v:588`) | EX3 (`iu_rtu_ex3_mul_wb_vld`) |
+| DIV | **EX1 에 들어오자마자** (`iu_rtu_ex1_div_cmplt = idu_iu_ex1_div_sel`, `aq_iu_div.v:755`) | 2~36 cycle 뒤 (`iu_rtu_div_wb_vld`, 포트 grant 후) |
+| LSU | AG 가 stall 없이 주소 변환·정렬·권한 검사를 끝내면 (`ag_pipe_cmplt_req`, `aq_lsu_ag.v:1184`) | load: DC(EX2) 에서 hit 면 바로, miss 면 refill 뒤 (wb1). store: retire 뒤 STB 를 거쳐 D-Cache 로(Phase 4) |
+| CP0 | `cp0_rtu_ex1_cmplt` | wb0 (rbus) |
+
+- 그래서 **retire 와 write-back 은 다른 사건**이다. MUL, DIV, miss 난 load 는 retire 된 뒤에 결과가 레지스터에 쓰인다. 그 결과를 쓰려는 뒤 명령은 IDU 의 WBT 가 ID 에서 막고(4 절, Phase 2 의 3.3 절), 쓰기 포트는 RTU 가 중재한다(`rtu_iu_mul_wb_grant`, `rtu_iu_div_wb_grant`).
+- 교과서 5 단(IF-ID-EX-MEM-WB)과 비교하면, C906 은 **retire 는 EX2 라는 고정 시점**이고 **write-back 은 유닛마다 다른 시점**이다. 고정된 WB 단계가 따로 있는 것이 아니다.
+- load 의 버스 에러가 imprecise(3.3 절 표)인 것도 같은 이유다. 응답이 올 때는 그 load 가 이미 retire 되어 뒤 명령이 진행된 뒤일 수 있다.
+
+**retire 시점에 정해지는 것들**
+
+| 무엇 | 어떻게 | 관련 |
+|---|---|---|
+| 예외 진입 | EX1 에서 판정된 예외가 retire 단계에서 trap 으로 확정된다. mcause/mepc/mtval, MPIE/MPP 갱신 | 3.3 절 |
+| mepc 값 | 동기 예외 → 그 명령의 PC(`dp_retire_ex2_cur_pc`). 인터럽트·비동기 예외 → 다음 PC(`dp_retire_ex2_next_pc`). 단 split 명령에 걸린 비동기 예외는 자기 PC | Phase 5 의 6 절 |
+| 인터럽트 수락 | retire 되는 명령 경계에서만 받는다. split 명령의 중간에서는 받지 않는다 | 3.4 절 |
+| 뒤 명령 취소 | retire 단계가 flush 를 걸면 EX1 에 있던 명령의 commit 을 지운다(`retire_ctrl_commit_clear`, `aq_rtu_retire.v:918` → `aq_rtu_ctrl.v:160`). 그 명령은 결과를 남기지 않는다 | 3.5 절 |
+| 새 fetch 주소 | trap → mtvec, mret/sret → mepc/sepc, fence.i 등 → `rtu_ifu_chgflw_pc` | 3.5 절 |
+| store 의 메모리 반영 | retire 된 store 만 STB 에 들어가 D-Cache 로 내려간다 | Phase 4 의 2.3 절 |
+| 디버그 halt | retire 되는 명령의 정보(`rtu_dtu_retire_halt_info`)로 halt 여부를 판단한다 | Phase 7 |
+
+반대로 **분기 mispredict 는 retire 를 기다리지 않는다**(3.5 절). in-order 라서 분기보다 앞선 명령은 이미 앞에 있으므로, EX1 의 BJU 가 바로 앞단을 고쳐도 순서가 깨지지 않는다.
 
 ---
 

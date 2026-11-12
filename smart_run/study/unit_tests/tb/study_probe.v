@@ -305,7 +305,11 @@ module study_probe;
   // 7. AXI master (BIU <-> SoC)
   // --------------------------------------------------------------------------
   wire        bus_arvalid     = tb.x_soc.biu_pad_arvalid;
-  wire        bus_arready     = tb.x_soc.pad_biu_arready;
+  wire        bus_arready     = tb.x_soc.fifo_biu_arready;   // BIU 가 받는 ready (axi_fifo 가 엔트리를 받으면 같은 사이클 1)
+  // axi_fifo -> interconnect 구간 : SoC 지연 모델이 요청을 붙잡는 곳 (Phase 4 의 5 절)
+  wire        ic_arvalid      = tb.x_soc.fifo_pad_arvalid;
+  wire        ic_arready      = tb.x_soc.pad_biu_arready;
+  wire [39:0] ic_araddr       = tb.x_soc.fifo_pad_araddr[39:0];
   wire [39:0] bus_araddr      = tb.x_soc.biu_pad_araddr[39:0];
   wire [7:0]  bus_arlen       = tb.x_soc.biu_pad_arlen[7:0];
   wire        bus_rvalid      = tb.x_soc.pad_biu_rvalid;
@@ -314,6 +318,55 @@ module study_probe;
   wire [39:0] bus_awaddr      = tb.x_soc.biu_pad_awaddr[39:0];
   wire        bus_wvalid      = tb.x_soc.biu_pad_wvalid;
   wire        bus_bvalid      = tb.x_soc.pad_biu_bvalid;
+  // 7-1. AXI 핸드셰이크 전체 (Phase 8 의 2.1 절, p8_bus01_amba)
+  wire        bus_rready      = tb.x_soc.biu_pad_rready;
+  wire [1:0]  bus_arburst     = tb.x_soc.biu_pad_arburst[1:0];
+  wire [7:0]  bus_arid        = tb.x_soc.biu_pad_arid[7:0];
+  wire [7:0]  bus_rid         = tb.x_soc.pad_biu_rid[7:0];
+  wire [1:0]  bus_rresp       = tb.x_soc.pad_biu_rresp[1:0];
+  wire [31:0] bus_rdata_lo    = tb.x_soc.pad_biu_rdata[31:0];
+  wire        bus_awready     = tb.x_soc.pad_biu_awready;
+  wire [7:0]  bus_awlen       = tb.x_soc.biu_pad_awlen[7:0];
+  wire [1:0]  bus_awburst     = tb.x_soc.biu_pad_awburst[1:0];
+  wire        bus_wready      = tb.x_soc.pad_biu_wready;
+  wire        bus_wlast       = tb.x_soc.biu_pad_wlast;
+  wire [15:0] bus_wstrb       = tb.x_soc.biu_pad_wstrb[15:0];
+  wire [31:0] bus_wdata_lo    = tb.x_soc.biu_pad_wdata[31:0];
+  wire        bus_bready      = tb.x_soc.biu_pad_bready;
+  wire [1:0]  bus_bresp       = tb.x_soc.pad_biu_bresp[1:0];
+
+  // --------------------------------------------------------------------------
+  // 7-2. AHB (axi2ahb -> ahb) : master 쪽 신호 + slave 선택
+  // --------------------------------------------------------------------------
+  wire [1:0]  ahb_htrans      = tb.x_soc.biu_pad_htrans[1:0];
+  wire [39:0] ahb_haddr       = tb.x_soc.biu_pad_haddr[39:0];
+  wire        ahb_hwrite      = tb.x_soc.biu_pad_hwrite;
+  wire [2:0]  ahb_hsize       = tb.x_soc.biu_pad_hsize[2:0];
+  wire [31:0] ahb_hwdata_lo   = tb.x_soc.biu_pad_hwdata[31:0];
+  wire        ahb_hready      = tb.x_soc.pad_biu_hready;
+  wire [1:0]  ahb_hresp       = tb.x_soc.pad_biu_hresp[1:0];
+  wire [31:0] ahb_hrdata_lo   = tb.x_soc.pad_biu_hrdata[31:0];
+  wire        ahb_hsel_mem    = tb.x_soc.hsel_s1;
+  wire        ahb_hsel_apb    = tb.x_soc.hsel_s2;
+  wire        ahb_hsel_err    = tb.x_soc.hsel_s3;
+
+  // --------------------------------------------------------------------------
+  // 7-3. SoC APB (apb_bridge) / CPU 내부 APB (BIU apbif -> PLIC, CLINT)
+  // --------------------------------------------------------------------------
+  wire        apb_psel        = tb.x_soc.x_apb.x_apb_bridge.apb_xx_psel;
+  wire        apb_penable     = tb.x_soc.x_apb.apb_xx_penable;
+  wire [39:0] apb_paddr       = tb.x_soc.x_apb.apb_xx_paddr[39:0];
+  wire        apb_pwrite      = tb.x_soc.x_apb.apb_xx_pwrite;
+  wire [31:0] apb_pwdata      = tb.x_soc.x_apb.apb_xx_pwdata[31:0];
+  wire        apb_psel_bdly   = tb.x_soc.x_apb.apb_bus_delay_psel;
+  wire [31:0] apb_prdata_bdly = tb.x_soc.x_apb.bus_delay_apb_prdata[31:0];
+  wire        capb_psel_plic  = `SP_CPU_TOP.psel_plic;
+  wire        capb_psel_clint = `SP_CPU_TOP.psel_clint;
+  wire        capb_penable    = `SP_CPU_TOP.penable;
+  wire [31:0] capb_paddr      = `SP_CPU_TOP.paddr[31:0];
+  wire        capb_pwrite     = `SP_CPU_TOP.pwrite;
+  wire [31:0] capb_pwdata     = `SP_CPU_TOP.pwdata[31:0];
+  wire [31:0] capb_prdata_plic = `SP_CPU_TOP.prdata_plic[31:0];
 
   // --------------------------------------------------------------------------
   // 8. PC -> 디스어셈블리 ASCII (GTKWave 에서 Data Format = ASCII 로 표시)

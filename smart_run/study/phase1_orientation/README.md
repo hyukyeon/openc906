@@ -33,29 +33,35 @@ C906은 T-Head(Alibaba 산하 반도체 부문)에서 개발한 **64-bit RISC-V*
 
 ### 1.2 Block Diagram
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    OpenC906 Core                     │
-│                                                     │
-│  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐ │
-│  │ IFU  │→│ IDU  │→│  IU  │→│ RTU  │→│ CP0  │ │
-│  │Fetch │  │Decode│  │Exec  │  │Retire│  │System│ │
-│  └──┬───┘  └──────┘  └──┬───┘  └──────┘  └──────┘ │
-│     │                    │                           │
-│  ┌──┴───┐            ┌──┴───┐                       │
-│  │ICache│            │ LSU  │                        │
-│  └──┬───┘            └──┬───┘                        │
-│     │                 ┌──┴───┐                       │
-│     │                 │DCache│                        │
-│     │                 └──┬───┘                        │
-│  ┌──┴─────────────────┬──┴───┐                       │
-│  │        MMU (TLB)          │                        │
-│  └──────────┬────────────────┘                        │
-│          ┌──┴───┐                                    │
-│          │ BIU  │← AXI Master                        │
-│          └──────┘                                    │
-└─────────────────────────────────────────────────────┘
-```
+![OpenC906 블록 다이어그램](../figures/f00_core_blocks.png)
+
+- 파란색: 코어 파이프라인(IFU → IDU → IU/LSU/FPU → RTU), 주황색: 주소 변환·버스(MMU, PMP, BIU), 초록색: 인터럽트 소스(CLINT, PLIC).
+- 빨간 점선: 앞단으로 되돌아가는 redirect. BJU 분기 예측 실패와 RTU의 trap / mret / fence.i 두 가지가 있다.
+- 괄호 안은 `gen_rtl/` 아래 디렉터리 이름이다. PMU와 DTU는 연결을 생략했다.
+
+#### 블록별 약자와 역할
+
+| 블록 | 풀네임 | 역할 | 디렉터리 |
+|------|--------|------|----------|
+| IFU | Instruction Fetch Unit | PC 생성, I-Cache 접근, 분기 예측(BHT / BTB / RAS), 16/32bit 명령 정렬과 IBUF(명령 버퍼) | `ifu/` |
+| IDU | Instruction Decode Unit | 디코드, RVC(16bit) 확장, 레지스터 읽기, WBT로 RAW/WAW hazard 검사, 실행 유닛으로 dispatch | `idu/` |
+| IU | Integer Unit | ALU, BJU(Branch/Jump Unit, 분기 판정과 redirect), MUL, DIV, 정수 결과 forwarding | `iu/` |
+| LSU | Load/Store Unit | 주소 계산(AG), D-Cache 접근(DC), Store Buffer(STB), load/store/AMO, uTLB 조회 | `lsu/` |
+| FPU | Floating-Point Unit | F/D(단·배정밀도) 연산. VIDU는 FP 디코드, VDSP(`aq_vpu_top`)는 FP 발행과 결과 쓰기, VFALU는 덧셈·비교, VFMAU는 곱셈·FMA, VFDSU는 나눗셈·제곱근 | `vidu/` `vdsp/` `vfalu/` `vfmau/` `vfdsu/` |
+| RTU | Retire Unit | 명령을 순서대로 확정(사이클당 1개), write-back, precise exception, 인터럽트 접수, flush와 redirect | `rtu/` |
+| CP0 | Coprocessor 0 | CSR 파일(mstatus, mie, mtvec 등), 특권 모드 M/S/U, 인터럽트 pending/enable 판정, WFI 저전력 상태 기계(LPMD) | `cp0/` |
+| MMU | Memory Management Unit | Sv39 주소 변환. I/D uTLB, JTLB, 하드웨어 page table walker(PTW) | `mmu/` |
+| PMP | Physical Memory Protection | 물리 주소 영역별 R/W/X 권한 검사(pmpcfg, pmpaddr) | `pmp/` |
+| BIU | Bus Interface Unit | 코어 밖으로 나가는 AXI4 128bit master. 캐시 refill, write-back, non-cacheable 접근 | `biu/` |
+| CLINT | Core-Local Interruptor | machine timer(mtime, mtimecmp)와 software interrupt(MSIP) | `clint/` |
+| PLIC | Platform-Level Interrupt Controller | 외부 인터럽트 소스의 우선순위 중재, claim / complete | `plic/` |
+| PMU | Performance Monitor Unit | 성능 카운터. RTL 이름은 `aq_hpcp`(Hardware Performance Counter). mcycle, minstret, mhpmcounter, 이벤트 선택(mhpmevent), 카운터 overflow 처리 | `pmu/` |
+| DTU | Debug Transfer Unit | 디버그의 CPU 쪽 접점. Debug Module의 halt/resume 요청을 코어에 전달하고, 하드웨어 trigger(breakpoint/watchpoint)와 PC FIFO를 가진다. 디버그 클럭 도메인 경계 처리(CDC) 포함 | `dtu/` |
+
+- **PMU와 DTU는 명령 실행 경로 밖의 보조 블록이다.** 파이프라인 흐름(IFU → … → RTU)에는 끼지 않아 그림에서 연결을 생략했다. PMU는 코어 안의 이벤트를 세기만 하고, DTU는 디버거가 코어를 멈추거나 들여다볼 때만 동작한다.
+- **TDT**(`tdt/`)는 코어 밖의 디버그 모듈로, JTAG DTM과 Debug Module을 담고 있다. DTU와 이어져 있으며 Phase 7에서 다룬다.
+- **벡터(RVV)는 오픈 버전에서 꺼져 있다.** `misa_vector = 1'b0`. 디렉터리 이름의 `v` 접두사(`vfalu`, `vdsp` 등)는 상용 버전의 벡터 옵션에서 쓰던 이름이 남은 것으로 보이며(추정), 오픈 버전에서는 FP 경로로 쓰인다.
+- 캐시 크기(I-Cache 32KB 2-way, D-Cache 32KB 4-way)와 TLB 구성은 위 §1.1 표를 참고한다.
 
 ---
 
@@ -321,22 +327,56 @@ Livelock: 50000 cycle 동안 retire 없음 → TEST FAIL
 
 ### 5.3 Memory Map
 
-```
-tb.v 의 적재 (5.1 의 initial 블록)
-  inst.pat → 0x0000_0000 부터 256KB  (.text/.rodata, linker.lcf 의 MEM1)
-  data.pat → 0x0004_0000 부터 256KB  (.data/.bss,  linker.lcf 의 MEM2)
-SoC 주소
-  0x0000_0000 ~        : SRAM (f_spsram_524288x128 x 2 = 8MB x 2)
-  0x1001_5000          : UART (APB)          0x1001_A000 : bus_delay 레지스터 (APB)
-  0x40_0000_0000       : PLIC   (pad_cpu_apb_base)
-  0x40_0400_0000       : CLINT  (base + 0x400_0000)
-```
+![유닛 테스트 SoC 메모리 맵](../figures/f00d_memmap.png)
 
-테스트 프로그램의 `printf`는 UART 주소(0x10015000)에 write 하는 방식이고, 테스트벤치가 0x10015000 으로의 AXI write 를 감지해 `$write`로 콘솔에 출력한다.
+C906 코어가 내는 40bit 물리 주소는 세 곳 중 하나로 간다. 이 갈림은 두 군데에서 정해진다.
 
-> ⚠️ 0x1001_5000 은 sysmap 상 cacheable 구간이라, D-Cache 가 켜진 상태의 `sw` 는 캐시에만 머물고 AXI 로 나가지 않는다(Phase 4 의 3.4 절). 유닛 테스트 환경은 그래서 다른 콘솔 채널을 쓴다(7 절).
+1. **BIU 안 (CPU 내부 APB 판정)**: 주소 [39:27]이 `pad_cpu_apb_base`(= 0x40_0000_0000)와 같으면 BIU의 `apbif`가 요청을 가로채 PLIC/CLINT로 보낸다. 이 접근은 AXI로 나가지 않는다 (`aq_biu_req_arbiter.v:438`, `aq_biu_apbif.v:287-288`).
+2. **SoC 안 (`axi_interconnect128`)**: 나머지 주소는 AXI로 나가고, SoC의 인터커넥트가 SRAM, AHB/APB, 에러 슬레이브 중 하나로 보낸다 (`axi_interconnect128.v:358-368`).
 
----
+#### 영역별 역할 · 내용 · 접근 블록
+
+| 주소 범위 | 역할 | 담기는 데이터 | 접근하는 블록 → 경로 |
+|---|---|---|---|
+| 0x00_0000_0000 ~ 0x00_0000_7FFF | 명령 영역 (유닛 테스트 TEXT 32KB) | `inst.pat`: `.text`, `.rodata`, crt0, trap 벡터, 테스트 코드 | IFU가 명령을 fetch(I-Cache refill). LSU가 상수를 읽음. → BIU → AXI → SRAM |
+| 0x00_0000_8000 ~ 0x00_0003_FFFF | TEXT 창의 나머지 | 0x1_FFC0~0x1_FFDF **TB 장치**(IRQ 주입 레지스터), 0x1_FFE0 **int_flag** | LSU store. 테스트벤치(`study_tbdev.v`, `study_probe.v`)가 이 주소로의 store를 감시한다 |
+| 0x00_0004_0000 ~ 0x00_0007_FFFF | 데이터 영역 (DATA 256KB) | `data.pat`: `.data`, `.bss`, 스택(top 0x7_FFF0), Sv39 테스트의 페이지 테이블 | LSU load/store, MMU의 PTW가 페이지 테이블을 읽음 → D-Cache → BIU → AXI → SRAM |
+| 0x00_0008_0000 ~ 0x00_00FF_FFFF | SRAM의 나머지 | 유닛 테스트는 쓰지 않음. 원본 smart_run 테스트는 0xFFFFF까지 쓴다(스택 0xEE000) | 위와 같은 경로 |
+| 0x00_0100_0000 ~ 0x00_0FFF_FFFF | 미매핑 (ERR1) | — | `axi_err128`(`x_axi_err`)이 받는다. 이름과 달리 **OKAY 응답**이다: 읽으면 0, 쓰기는 버려진다. 버스 에러 예외가 나지 않는다 (`axi_err128.v:208-217`) |
+| 0x00_1000_0000 ~ 0x00_1FFF_FFFF | SoC 주변장치 창 | UART, timer, GPIO, bus_delay 등의 레지스터 (아래 표) | LSU → BIU → AXI → `axi2ahb` → AHB → APB bridge |
+| 0x00_2000_0000 ~ 0x3F_FFFF_FFFF | 미매핑 (ERR2) | — | `axi_err128`(`x_axi_err1`). 위와 같이 OKAY 응답, 읽기 0 |
+| 0x40_0000_0000 ~ 0x40_03FF_FFFF | **PLIC** (CPU 내부) | 소스 우선순위, pending, enable, threshold, claim/complete | LSU → BIU `apbif` → PLIC (AXI로 나가지 않음) |
+| 0x40_0400_0000 ~ 0x40_0400_FFFF | **CLINT** (CPU 내부) | MSIP, mtimecmp, SSIP. mtime은 MMIO가 아니라 `time` CSR로 읽는다 | LSU → BIU `apbif` → CLINT |
+| 0x40_0401_0000 ~ 0x40_07FF_FFFF | CPU 내부 APB 창의 빈 곳 | — | BIU가 가로채지만 PLIC/CLINT 어느 쪽도 선택되지 않는다(응답 동작은 확인하지 않음) |
+| 0x40_0800_0000 ~ 0xFF_FFFF_FFFF | 미매핑 (ERR2) | — | CPU 내부 APB 창(128MB) 밖이라 AXI로 나가 `axi_err128`이 받는다. OKAY 응답, 읽기 0 |
+
+**SRAM 구성**: `axi_slave128` 안에 `f_spsram_524288x128`(512K × 16B = 8MB)이 두 개 있다. 주소 bit 23이 0이면 L(0x0~0x7F_FFFF), 1이면 H(0x80_0000~0xFF_FFFF)를 쓴다(`axi_slave128.v:525-526`). 테스트벤치는 `inst.pat`을 0x0부터, `data.pat`을 0x40000부터 L에 적재한다.
+
+**SoC 주변장치 (APB, `apb_bridge.v` + `apb.v`)**
+
+| 주소 | 장치 | 쓰임 |
+|---|---|---|
+| 0x1001_0000 | intc (PS4) | SoC 쪽 인터럽트 컨트롤러 레지스터 |
+| 0x1001_1000 | timer (PS2) | 타이머 4채널. 인터럽트는 PLIC 소스로 간다 |
+| 0x1001_5000 | UART (PS1) | 원본 테스트의 `printf`. 테스트벤치가 이 주소로의 AXI write를 콘솔로 찍는다 |
+| 0x1001_7000 | clkgen (PS6) | 버스 클럭 비율 레지스터(`pad_biu_clkratio`, 기본 0) |
+| 0x1001_8000 | stimer (PS7) | 두 번째 타이머 |
+| 0x1001_9000 | GPIO (PS5) | 8bit GPIO |
+| 0x1001_A000 | bus_delay (PS8) | `axi_fifo`의 읽기 지연 값(Phase 4의 5절) |
+| 0x1F00_0000 ~ 0x1F01_FFFF | AHB RAM (`mem_ctrl`, AHB S1) | APB가 아니라 AHB에 직접 붙은 RAM. 테스트에서는 쓰지 않는다 |
+| 0x1F02_0000 ~ 0x1FFF_FFFF | AHB 기본 슬레이브 (`err_gen`) | AHB **ERROR 응답**(hresp = 01). AXI 쪽 응답으로 어떻게 바뀌는지는 확인하지 않았다 |
+
+PS 슬롯 어디에도 해당하지 않는 0x1000_0000~0x1EFF_FFFF 주소(예: PS3, PS9 자리)의 동작은 확인하지 않았다.
+
+#### MMU sysmap — 주소마다 붙는 속성
+
+![MMU sysmap 영역](../figures/f00b_memmap.png)
+
+버스 경로와 별개로, 코어는 `mmu/rtl/sysmap.h`의 8개 영역 표(Phase 4의 3.4절)로 주소마다 **속성**(캐시 가능 여부, 장치 여부)을 정한다. 영역 i는 `[BASE_{i-1}, BASE_i)`이고 4KB 단위다. 속성 비트는 `{SO, C, B, SH, SEC}` 순서다(`aq_mmu_regs.v`의 `mel_so/c/b/sh/sec`).
+
+- SRAM과 SoC 주변장치 창은 모두 **R0(캐시 가능)** 안에 있다. 그래서 UART(0x1001_5000)나 bus_delay에 `sw`를 하면 D-Cache에만 머물고 AXI로 나가지 않는다. 버스로 내보내려면 D-Cache를 잠시 끄거나(MHCR.DE=0, Phase 4의 3.4절), 유닛 테스트처럼 다른 콘솔 채널(`mscratch`, 7절)을 쓴다.
+- PLIC/CLINT가 있는 0x40_0000_0000은 **R6(장치, 캐시 불가, strongly-ordered)** 이다.
+- MMU를 켜고 페이지 테이블에 T-Head 확장 속성(MAEE)을 쓰면 sysmap 대신 PTE의 속성을 쓴다(`aq_mmu_ptw.v:719-720`).
 
 ## 6. Lab Exercises
 
@@ -385,7 +425,7 @@ smart_run/study/unit_tests/
 │   ├── study_tbdev.v     # TB 장치: SoC 외부 인터럽트 선 구동 (store 로 제어, Phase 5 6 절)
 │   ├── soc_overlay/      # SoC 파일 학습용 사본 (cpu_sub_system_axi.v: 외부 인터럽트 입력 추가, 원본과 한 줄 차이)
 │   └── sim_top.v         # Verilator 용 래퍼 (tb + study_probe + study_tbdev)
-├── tests/                # 테스트 19 개, 폴더 하나에 하나: tests/<test>/<test>.S
+├── tests/                # 테스트 20 개, 폴더 하나에 하나: tests/<test>/<test>.S
 │   └── p5_sys06_wfi_flag/ #   <test>.S + 실행 후 복사되는 <test>.objdump, console.log (git 에 함께 올라감)
 ├── tools/                # mk_asm_rom / mk_gtkw / pipeview / vcd_query / wave_snap / collect_results / wave_web
 ├── web/                  # 브라우저 파형 뷰어 (테스트 목록 index.html + Surfer WASM)
@@ -457,7 +497,8 @@ make web-stop   # 중지
 | irq | `irq_ext0`, `irq_age`, `plic_ip35`, `plic_mclaim/sclaim`, `plic_meip/seip`, `clint_msip/ssip`, `mip_*`, `mie_*`, `int_req`, `int_vec`, `rt_redirect_pc` (Phase 5 6 절) |
 | wfi | `int_flag`(INT_FLAG_ADDR 로의 store 를 감지한 값), `wfi_state`(0 IDLE / 1 WAIT / 2 LPMD), `wfi_in_lpmd`, `wfi_wake`, `irq_ext0/1`, `plic_mclaim`, `mip_meip`, `int_req`, `asm_rt`, `rt_expt`, `cp0_mepc` (Phase 5 6.7 절) |
 | trap | M 과 S 의 trap CSR 나란히: `cp0_mtvec`, `cp0_mepc`, `cp0_mcause_*`, `cp0_mstatus_*` / `cp0_stvec`, `cp0_sepc`, `cp0_scause_*`, `cp0_sstatus_*`, `cp0_mideleg` |
-| bus | `bus_arvalid/arready/araddr/arlen`, `bus_rvalid/rlast`, `bus_aw*/w*/b*` |
+| bus | `bus_arvalid/arready/araddr/arlen`(BIU ↔ axi_fifo), `ic_arvalid/arready`(axi_fifo → interconnect), `bus_rvalid/rlast`, `bus_aw*/w*/b*` |
+| axi · ahb · apb | AXI 5채널 핸드셰이크 전체, AHB(`ahb_*`), SoC APB(`apb_*`), CPU 내부 APB(`capb_*`) — Phase 8의 2절 |
 
 `asm_*` 신호는 그 단계 PC 의 디스어셈블리를 40 글자 ASCII 로 넣은 것이다 — GTKWave 와 Surfer 웹 뷰어 모두 형식이 ASCII 로 설정되어 있어 파형에 명령어가 그대로 보인다.
 

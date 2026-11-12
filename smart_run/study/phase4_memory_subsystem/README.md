@@ -239,7 +239,8 @@ assign ptw_ref_pma[4:0] = cp0_mmu_maee && !ptw_pmp_mach ? lsu_data_flop[63:59]
 | non-cacheable / device | INCR (01) | 0 | 단일 접근 |
 
 ```
-AR: arvalid ─┐  arready ─┐ (SoC 지연 모델이 여기서 붙잡음)
+AR: arvalid · arready     (BIU → axi_fifo, 같은 사이클에 받음)
+    ic_arvalid · ic_arready (axi_fifo → interconnect, SoC 지연 모델이 여기서 붙잡음)
 R : rvalid    ─┐ ─┐ ─┐ ─┐ rlast
 LSU: ld_data_vld   └ (critical word 도착 즉시)
 ```
@@ -278,7 +279,7 @@ make run T=p4_mem02_stb         # store-to-load forwarding
 make run T=p4_mem03_amo_fence   # LR/SC, AMO, fence, fence.i
 make run T=p4_mem04_sv39        # Sv39, PTW, page fault, alias
 python3 tools/vcd_query.py out/p4_mem01_dcache/p4_mem01_dcache.vcd --mark 1 \
-    --signals bus_arvalid,bus_arready,bus_araddr,bus_arlen,bus_rvalid,bus_rlast,lsu_ld_data_vld
+    --signals bus_arvalid,bus_arready,ic_arvalid,ic_arready,bus_araddr,bus_arlen,bus_rvalid,bus_rlast,lsu_ld_data_vld
 ```
 
 ### Lab 4.1: miss 한 번 해부

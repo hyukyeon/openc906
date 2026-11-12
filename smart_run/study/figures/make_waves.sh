@@ -26,7 +26,7 @@ $S out/p3_be04_trap --from-cycle 2733 --to-cycle 2753 --pad 0 --height 640 \
   --signals "clk,cycle,-Execute / Retire,asm_ex1,asm_rt,rt_expt,rt_flush,rt_redirect,rt_redirect_pc,-CP0,cp0_priv,cp0_mcause_int,cp0_mcause_code,cp0_mepc,cp0_mstatus_mie,cp0_mstatus_mpie" \
   -o $FIG/wave_trap_ecall.png
 $S out/p4_mem01_dcache --mark 1 --pad 2 --height 600 \
-  --signals "clk,cycle,-LSU,asm_ex1,lsu_ag_vld,lsu_ag_va,lsu_dc_vld,lsu_dc_miss,lsu_ld_data_vld,-AXI,bus_arvalid,bus_arready,bus_araddr,bus_arlen,bus_rvalid,bus_rlast,-Retire,asm_rt" \
+  --signals "clk,cycle,-LSU,asm_ex1,lsu_ag_vld,lsu_ag_va,lsu_dc_vld,lsu_dc_miss,lsu_ld_data_vld,-AXI,bus_arvalid,bus_arready,ic_arvalid,ic_arready,bus_araddr,bus_arlen,bus_rvalid,bus_rlast,-Retire,asm_rt" \
   -o $FIG/wave_dcache_miss.png
 $S out/p4_mem04_sv39 --mark 1 --pad 2 --height 560 \
   --signals "clk,cycle,-LSU / PTW,asm_ex1,lsu_ag_va,lsu_dc_vld,lsu_dc_pa,lsu_dc_miss,lsu_ld_data_vld,-AXI,bus_arvalid,bus_araddr,-Retire,asm_rt,cp0_priv" \
@@ -60,3 +60,19 @@ $S out/p5_sys06_wfi_flag --from-cycle 6580 --to-cycle 6630 --pad 0 --height 640 
 $S out/p5_sys06_wfi_flag --from-cycle 6656 --to-cycle 6692 --pad 0 --height 600 \
   --signals "clk,cycle,-Handler / Flag,asm_rt,lsu_dc_st,lsu_dc_pa,int_flag,irq_ext0,plic_act35,-mret -> loop,rt_redirect,rt_redirect_pc,cp0_mstatus_mie,lsu_dc_ld,mark" \
   -o $FIG/wave_wfi_exit.png
+# Phase 8 2 절 : AXI / AHB / APB 실제 핸드셰이크 (p8_bus01_amba)
+$S out/p8_bus01_amba --from-cycle 2675 --to-cycle 2688 --pad 0 --height 600 \
+  --signals "clk,cycle,-AR (BIU ↔ axi_fifo),bus_arvalid,bus_arready,bus_araddr,bus_arlen,bus_arburst,-AR (axi_fifo → interconnect),ic_arvalid,ic_arready,-R (읽기 데이터),bus_rvalid,bus_rready,bus_rdata_lo,bus_rlast,bus_rresp" \
+  -o $FIG/wave_axi_read_burst.png
+$S out/p8_bus01_amba --from-cycle 2702 --to-cycle 2716 --pad 0 --height 700 \
+  --signals "clk,cycle,-AW,bus_awvalid,bus_awready,bus_awaddr,bus_awlen,-W,bus_wvalid,bus_wready,bus_wdata_lo,bus_wstrb,bus_wlast,-B,bus_bvalid,bus_bready,bus_bresp,-AR / R,bus_arvalid,bus_arready,ic_arvalid,bus_rvalid,bus_rdata_lo" \
+  -o $FIG/wave_axi_write.png
+$S out/p8_bus01_amba --from-cycle 2766 --to-cycle 2779 --pad 0 --height 720 \
+  --signals "clk,cycle,-AXI,bus_awvalid,bus_awready,bus_wvalid,bus_wready,bus_bvalid,-AHB,ahb_htrans,ahb_haddr,ahb_hwrite,ahb_hsize,ahb_hwdata_lo,ahb_hready,ahb_hsel_apb,-APB,apb_psel,apb_penable,apb_paddr,apb_pwrite,apb_pwdata" \
+  -o $FIG/wave_ahb_apb_write.png
+$S out/p8_bus01_amba --from-cycle 2945 --to-cycle 2956 --pad 0 --height 700 \
+  --signals "clk,cycle,-AXI,ic_arvalid,ic_arready,bus_rvalid,bus_rdata_lo,-AHB,ahb_htrans,ahb_hwrite,ahb_hsize,ahb_hready,ahb_hrdata_lo,ahb_hsel_apb,-APB,apb_psel,apb_penable,apb_pwrite,apb_prdata_bdly" \
+  -o $FIG/wave_ahb_apb_read.png
+$S out/p8_bus01_amba --from-cycle 2988 --to-cycle 3022 --pad 0 --height 560 \
+  --signals "clk,cycle,-CPU 내부 APB (BIU apbif),capb_psel_plic,capb_penable,capb_paddr,capb_pwrite,capb_pwdata,capb_prdata_plic,-AXI (조용함),bus_arvalid,bus_awvalid,-Retire,asm_rt" \
+  -o $FIG/wave_capb_plic.png

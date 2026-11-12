@@ -81,8 +81,25 @@ GROUPS = {
         ("cp0_mepc", 64, "h"), ("cp0_mcause_code", 5, "d")]),
     "bus": ("AXI master (BIU)", [
         ("bus_arvalid", 1, "b"), ("bus_arready", 1, "b"), ("bus_araddr", 40, "h"), ("bus_arlen", 8, "d"),
+        ("ic_arvalid", 1, "b"), ("ic_arready", 1, "b"),
         ("bus_rvalid", 1, "b"), ("bus_rlast", 1, "b"),
         ("bus_awvalid", 1, "b"), ("bus_awaddr", 40, "h"), ("bus_wvalid", 1, "b"), ("bus_bvalid", 1, "b")]),
+    "axi": ("AXI handshake (BIU <-> SoC)", [
+        ("bus_arvalid", 1, "b"), ("bus_arready", 1, "b"), ("bus_araddr", 40, "h"), ("bus_arlen", 8, "d"),
+        ("bus_arburst", 2, "d"), ("ic_arvalid", 1, "b"), ("ic_arready", 1, "b"), ("bus_rvalid", 1, "b"), ("bus_rready", 1, "b"), ("bus_rdata_lo", 32, "h"),
+        ("bus_rlast", 1, "b"), ("bus_rresp", 2, "d"),
+        ("bus_awvalid", 1, "b"), ("bus_awready", 1, "b"), ("bus_awaddr", 40, "h"), ("bus_awlen", 8, "d"),
+        ("bus_wvalid", 1, "b"), ("bus_wready", 1, "b"), ("bus_wdata_lo", 32, "h"), ("bus_wstrb", 16, "h"),
+        ("bus_wlast", 1, "b"), ("bus_bvalid", 1, "b"), ("bus_bready", 1, "b"), ("bus_bresp", 2, "d")]),
+    "ahb": ("AHB (axi2ahb -> ahb)", [
+        ("ahb_htrans", 2, "d"), ("ahb_haddr", 40, "h"), ("ahb_hwrite", 1, "b"), ("ahb_hsize", 3, "d"),
+        ("ahb_hwdata_lo", 32, "h"), ("ahb_hready", 1, "b"), ("ahb_hresp", 2, "d"), ("ahb_hrdata_lo", 32, "h"),
+        ("ahb_hsel_mem", 1, "b"), ("ahb_hsel_apb", 1, "b"), ("ahb_hsel_err", 1, "b")]),
+    "apb": ("APB (SoC apb_bridge / CPU-internal apbif)", [
+        ("apb_psel", 1, "b"), ("apb_penable", 1, "b"), ("apb_paddr", 40, "h"), ("apb_pwrite", 1, "b"),
+        ("apb_pwdata", 32, "h"), ("apb_psel_bdly", 1, "b"), ("apb_prdata_bdly", 32, "h"),
+        ("capb_psel_plic", 1, "b"), ("capb_psel_clint", 1, "b"), ("capb_penable", 1, "b"),
+        ("capb_paddr", 32, "h"), ("capb_pwrite", 1, "b"), ("capb_pwdata", 32, "h"), ("capb_prdata_plic", 32, "h")]),
 }
 FLAG = {"b": "28", "h": "22", "d": "24", "a": "800"}
 
