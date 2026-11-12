@@ -1,0 +1,22 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ size_rvc_bytes = 514
+@@ size_norvc_bytes = 1028
+@@ m1_rvc_cold_cycles = 308
+@@ m1_rvc_cold_icmiss = 9
+@@ m2_norvc_cold_cycles = 479
+@@ m2_norvc_cold_icmiss = 18
+@@ m3_rvc_warm_cycles = 262
+@@ m3_rvc_warm_icmiss = 1
+@@ m4_norvc_warm_cycles = 269
+@@ m4_norvc_warm_icmiss = 1
+@@ m5_aligned32_loop_cycles = 178
+@@ m6_misaligned32_loop_cycles = 205
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

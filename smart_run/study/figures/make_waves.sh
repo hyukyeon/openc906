@@ -104,3 +104,8 @@ $S out/p5_sys07_irq_nest --from-cycle 3430 --to-cycle 3452 --pad 0 --height 480 
   --signals "clk,cycle,-Retire,asm_rt,rt_expt,rt_redirect,rt_redirect_pc,-Interrupt,int_req,int_vec,-Trap CSR,cp0_mcause_code,cp0_mepc" -o $FIG/wave_irq_tailchain.png
 $S out/p5_sys07_irq_nest --from-cycle 4680 --to-cycle 4900 --pad 0 --width 1600 --height 600 \
   --signals "cycle,mark,-Pending,mip_mtip,mip_msip,cp0_mstatus_mie,-RTU,int_req,int_vec,rt_expt,-Trap CSR,cp0_mcause_code,cp0_mepc,-Retire,asm_rt" -o $FIG/wave_irq_nest.png
+# Phase 2 2.5.1 절 : RVC 밀도와 분기 목표 정렬 (p2_fe05_rvc_density)
+$S out/p2_fe05_rvc_density --from-cycle 8480 --to-cycle 8497 --pad 0 --height 460 \
+  --signals "clk,cycle,-Front-End,fe_if_pc,fe_btb_redirect,fe_ip_redirect,asm_ip,-Retire,asm_rt" -o $FIG/wave_rvc_loop_aligned.png
+$S out/p2_fe05_rvc_density --from-cycle 9152 --to-cycle 9169 --pad 0 --height 460 \
+  --signals "clk,cycle,-Front-End,fe_if_pc,fe_btb_redirect,fe_ip_redirect,asm_ip,-Retire,asm_rt" -o $FIG/wave_rvc_loop_misaligned.png

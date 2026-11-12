@@ -20,9 +20,9 @@
 ## v2 에서 바뀐 것 (요약)
 
 - **RTL 대조 정정**: D-Cache 4-way / I·D-Cache FIFO 교체 / BHT 는 PC 없이 전역 히스토리만 사용 / BTB 는 16-entry L0 BTB / JALR 비예측 / line fill = AXI WRAP 4 beat / CLINT·PLIC 는 CPU top 안 / PA 40bit / V 확장 비활성
-- **유닛 테스트 24 개** (`unit_tests/`): Verilator 로 테스트당 약 1 초. 결과 수치 + VCD + GTKWave 세이브 파일 + 사이클 표(pipeview)
+- **유닛 테스트 25 개** (`unit_tests/`): Verilator 로 테스트당 약 1 초. 결과 수치 + VCD + GTKWave 세이브 파일 + 사이클 표(pipeview)
 - **RTL 발췌**(파일:라인)와 **실측 수치**를 각 Phase 본문에 넣었다
-- **그림**: 구조도 17 장(Graphviz 11 + matplotlib 6) + GTKWave 파형 캡처 33 장 (`figures/`, 재생성 스크립트 포함)
+- **그림**: 구조도 17 장(Graphviz 11 + matplotlib 6) + GTKWave 파형 캡처 35 장 (`figures/`, 재생성 스크립트 포함)
 - **부록 A/B** 신설
 
 ## Prerequisites
@@ -48,7 +48,7 @@
 # 학습용 유닛 테스트 (권장)
 cd openc906/smart_run/study/unit_tests
 make sim                      # 최초 1 회 Verilator 빌드 (약 3~4 분)
-make all                      # 24 개 테스트 → out/RESULTS.md
+make all                      # 25 개 테스트 → out/RESULTS.md
 make run T=p2_fe02_bp_loop    # 하나만, 결과/VCD/pipeview
 make wave T=p2_fe02_bp_loop   # GTKWave
 make web                      # 브라우저 파형 뷰어 (태블릿/폰, tailnet 전용) — Phase 1 의 7.3 절
@@ -68,6 +68,7 @@ make runcase CASE=ISA_INT SIM=iverilog
 | p2_fe02_bp_loop | BTB/IP/BJU redirect 비용, GHR warm-up | 2 |
 | p2_fe03_bp_ghr | GHR 패턴 학습, 앨리어싱, gshare_lite 패치 | 2, 부록 B |
 | p2_fe04_ras_jalr | RAS 깊이, wrong-path push, JALR | 2 |
+| p2_fe05_rvc_density | RVC 코드 크기 절반 → cold I$ miss 절반, warm 은 같음, 분기 목표가 2B 어긋나면 되돌아갈 때 +1 사이클 | 2 |
 | p3_be01_hazard | RAW/WAW stall, forward | 2, 3 |
 | p3_be02_muldiv | MUL latency, DIV 가변 latency/결과 버퍼 | 3, 부록 A |
 | p3_be03_mispred_penalty | mispredict penalty | 3 |
