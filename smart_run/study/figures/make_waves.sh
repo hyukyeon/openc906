@@ -97,3 +97,10 @@ $S out/p7_dbg01_trigger --from-cycle 3600 --to-cycle 3628 --pad 0 --height 480 \
   --signals "clk,cycle,mark,-Fetch,fe_if_pc,-Retire,asm_rt,rt_expt,rt_redirect,rt_redirect_pc,-Trap,cp0_mcause_code,cp0_mepc" -o $FIG/wave_dbg_exec_bp.png
 $S out/p7_dbg01_trigger --from-cycle 4438 --to-cycle 4458 --pad 0 --height 460 \
   --signals "clk,cycle,mark,-Execute,asm_ex1,-Retire,asm_rt,rt_expt,rt_redirect_pc,-Trap,cp0_mcause_code,cp0_mepc" -o $FIG/wave_dbg_store_wp.png
+# Phase 5 6.8 절 : 우선순위와 중첩 (p5_sys07_irq_nest)
+$S out/p5_sys07_irq_nest --from-cycle 3020 --to-cycle 3560 --pad 0 --width 1600 --height 560 \
+  --signals "cycle,mark,-Pending,mip_meip,mip_msip,mip_mtip,cp0_mstatus_mie,-RTU,int_req,int_vec,rt_expt,-Trap CSR,cp0_mcause_code,cp0_mepc" -o $FIG/wave_irq_prio.png
+$S out/p5_sys07_irq_nest --from-cycle 3430 --to-cycle 3452 --pad 0 --height 480 \
+  --signals "clk,cycle,-Retire,asm_rt,rt_expt,rt_redirect,rt_redirect_pc,-Interrupt,int_req,int_vec,-Trap CSR,cp0_mcause_code,cp0_mepc" -o $FIG/wave_irq_tailchain.png
+$S out/p5_sys07_irq_nest --from-cycle 4680 --to-cycle 4900 --pad 0 --width 1600 --height 600 \
+  --signals "cycle,mark,-Pending,mip_mtip,mip_msip,cp0_mstatus_mie,-RTU,int_req,int_vec,rt_expt,-Trap CSR,cp0_mcause_code,cp0_mepc,-Retire,asm_rt" -o $FIG/wave_irq_nest.png

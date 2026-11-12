@@ -20,9 +20,9 @@
 ## v2 에서 바뀐 것 (요약)
 
 - **RTL 대조 정정**: D-Cache 4-way / I·D-Cache FIFO 교체 / BHT 는 PC 없이 전역 히스토리만 사용 / BTB 는 16-entry L0 BTB / JALR 비예측 / line fill = AXI WRAP 4 beat / CLINT·PLIC 는 CPU top 안 / PA 40bit / V 확장 비활성
-- **유닛 테스트 23 개** (`unit_tests/`): Verilator 로 테스트당 약 1 초. 결과 수치 + VCD + GTKWave 세이브 파일 + 사이클 표(pipeview)
+- **유닛 테스트 24 개** (`unit_tests/`): Verilator 로 테스트당 약 1 초. 결과 수치 + VCD + GTKWave 세이브 파일 + 사이클 표(pipeview)
 - **RTL 발췌**(파일:라인)와 **실측 수치**를 각 Phase 본문에 넣었다
-- **그림**: 구조도 17 장(Graphviz 11 + matplotlib 6) + GTKWave 파형 캡처 30 장 (`figures/`, 재생성 스크립트 포함)
+- **그림**: 구조도 17 장(Graphviz 11 + matplotlib 6) + GTKWave 파형 캡처 33 장 (`figures/`, 재생성 스크립트 포함)
 - **부록 A/B** 신설
 
 ## Prerequisites
@@ -48,7 +48,7 @@
 # 학습용 유닛 테스트 (권장)
 cd openc906/smart_run/study/unit_tests
 make sim                      # 최초 1 회 Verilator 빌드 (약 3~4 분)
-make all                      # 23 개 테스트 → out/RESULTS.md
+make all                      # 24 개 테스트 → out/RESULTS.md
 make run T=p2_fe02_bp_loop    # 하나만, 결과/VCD/pipeview
 make wave T=p2_fe02_bp_loop   # GTKWave
 make web                      # 브라우저 파형 뷰어 (태블릿/폰, tailnet 전용) — Phase 1 의 7.3 절
@@ -83,6 +83,7 @@ make runcase CASE=ISA_INT SIM=iverilog
 | p5_sys04_ext_irq | TB 장치 외부 인터럽트, M vs S 진입·위임·보류, PLIC claim/complete | 5 |
 | p5_sys05_ipi | IPI(CLINT MSIP), SBI 방식 S 전달, C906 SSIP0, 인터럽트 우선순위 | 5 |
 | p5_sys06_wfi_flag | 인터럽트 플래그 + `while (!int_flag) { wfi; }`: 잠듦 → 인터럽트 → 플래그 → 탈출, 다른 인터럽트로 깬 경우 | 5 |
+| p5_sys07_irq_nest | MEI > MSI > MTI 우선순위, mret 에 실려 오는 다음 인터럽트, 중첩(nesting) 허용/비허용 | 5 |
 | p6_fp01_latency | FPU latency/throughput(fadd·fmul 5, fmadd 6, fdiv.d 32, fdiv.s 17), fflags, mstatus.FS Off → illegal | 6 |
 | p7_dbg01_trigger | 하드웨어 trigger 10개: 실행 breakpoint, store/load watchpoint, tcontrol.MTE | 7 |
 | p8_bus01_amba | AXI 읽기 버스트·단일 쓰기, AXI → AHB → APB 쓰기/읽기, CPU 내부 APB(PLIC)의 실제 핸드셰이크 | 8 |

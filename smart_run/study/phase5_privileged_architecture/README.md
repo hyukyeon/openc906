@@ -4,7 +4,7 @@
 > **목표**: 특권 모드, CSR, trap/위임, 인터럽트(CLINT/PLIC), PMP 를 스펙 → RTL → 실측 순서로 이해한다.
 > ⚠️ v2 정정: (1) CLINT/PLIC 는 SoC 가 아니라 **CPU top(`openC906.v`) 안**에 있다 (2) CLINT 주소/레지스터 맵을 UM 기준으로 정정(MTIME 은 MMIO 가 아니라 time CSR) (3) PMP 매칭 모드는 4 가지(OFF/TOR/NA4/NAPOT)이며 **C906 은 NA4 미지원, 최소 4KB** (4) PMP 를 바꾼 뒤 `sfence.vma` 가 필요하다(실측).
 > 📚 표준: Privileged Architecture 1.10 기준 (부록 A 1 절). CSR 주소 규칙·WARL 은 부록 A 8 절.
-> 🆕 6 절: 테스트벤치가 외부 인터럽트 선을 올려 M/S 모드 인터럽트 진입을 사이클 단위로 비교하고(`p5_sys04_ext_irq`), IPI 를 본다(`p5_sys05_ipi`). 6.7 절은 인터럽트 플래그 + `while (!int_flag) { wfi; }` 대기 루프(`p5_sys06_wfi_flag`). PC·trap CSR 의 기능과 설정값, 트랩 엔트리와 핸들러 진입 순서를 정리했다.
+> 🆕 6 절: 테스트벤치가 외부 인터럽트 선을 올려 M/S 모드 인터럽트 진입을 사이클 단위로 비교하고(`p5_sys04_ext_irq`), IPI 를 본다(`p5_sys05_ipi`). 6.7 절은 인터럽트 플래그 + `while (!int_flag) { wfi; }` 대기 루프(`p5_sys06_wfi_flag`). 6.8 절은 세 인터럽트의 우선순위와 중첩(`p5_sys07_irq_nest`). PC·trap CSR 의 기능과 설정값, 트랩 엔트리와 핸들러 진입 순서를 정리했다.
 
 ---
 
@@ -526,6 +526,41 @@ MARK 2를 사이클 단위로 보면 다음과 같다(Verilator seed 7). 첫 번
 
 - 첫 핸들러 진입이 느린 이유는 스택이 아직 D$에 없어서다(MARK 1: `sd t2, 16(sp)`가 D$ miss를 내고 약 210 사이클 멈춘다). 두 번째부터는 trap → 플래그 store가 약 45 사이클이다.
 
+### 6.8 우선순위와 중첩 인터럽트 (`p5_sys07_irq_nest`)
+
+**우선순위 (MARK 1)** — mstatus.MIE = 0인 동안 MEI(PLIC ID 35), MSI(CLINT MSIP0), MTI(mtimecmp = 0)를 모두 pending으로 만든 뒤 MIE를 켠다.
+
+| 순서 | cycle | 원인 | 들어간 시점 | mepc |
+|---|---|---|---|---|
+| 1 | 3030 | MEI (11) | MIE를 켠 `csrsi`(0x342)가 retire될 때 | 0x346 |
+| 2 | 3443 | MSI (3) | MEI 핸들러의 **`mret`(0x5D0)이 retire될 때** | 0x346 |
+| 3 | 3542 | MTI (7) | MSI 핸들러의 `mret`이 retire될 때 | 0x346 |
+
+![세 인터럽트가 우선순위대로](../figures/wave_irq_prio.png)
+
+- 순서는 RTU의 우선순위 인코더(Phase 3의 3.4절) 그대로 **MEI > MSI > MTI**다.
+- 2, 3번은 핸들러의 `mret`에 바로 실려 들어갔다. `mret`이 retire되는 순간 다른 인터럽트가 pending이면 `mret`이 trap으로 바뀐다. 그래서 main의 명령은 하나도 실행되지 않고 mepc는 처음 값 0x346을 유지한다. 핸들러 사이를 오가는 낭비가 적다(ARM의 tail-chaining과 비슷한 효과).
+
+![mret 에 실려 들어가는 다음 인터럽트](../figures/wave_irq_tailchain.png)
+
+3443에 `mret`이 retire 단계에 왔을 때 `int_req = 1`, `int_vec = 3`이다. 그래서 `mret`의 목적지(mepc) 대신 mtvec(0x140)으로 간다. mcause만 11에서 3으로 바뀐다.
+
+**중첩 (MARK 2, 3)** — RISC-V는 trap에 들어가면 하드웨어가 MIE를 0으로 만든다(MPIE에 백업). 그래서 기본적으로 핸들러 안에서는 다른 인터럽트를 받지 않는다. 중첩을 허용하려면 소프트웨어가 직접 해야 한다.
+
+1. 핸들러 처음에 **mepc와 mstatus를 스택에 저장**한다. 중첩된 trap이 이 둘(mepc, MPIE/MPP)을 덮어쓰기 때문이다.
+2. 원인을 정리한 뒤 `csrsi mstatus, MIE`로 다시 켠다.
+3. 끝낼 때 MIE를 끄고, 저장한 mepc와 mstatus를 되돌린 뒤 `mret`한다.
+
+| MARK | MTI 핸들러가 하는 일 | log | 결과 |
+|---|---|---|---|
+| 2 | MSIP0 = 1, **MIE를 다시 켬** | 07 03 83 87 | MTI 시작 → MSI 시작 → MSI 끝 → MTI 끝. MSI가 MTI 핸들러 안으로 끼어든다(4777, mepc = 0x562 = 핸들러 안) |
+| 3 | MSIP0 = 1, MIE는 켜지 않음 | 07 87 03 83 | MTI가 끝나고 `mret`할 때 MSI가 들어간다(6228, mepc = main의 0x456) |
+
+![MTI 핸들러 안으로 MSI 가 끼어드는 중첩](../figures/wave_irq_nest.png)
+
+- 4690에 MTI가 들어오면서 MIE가 0이 된다. 핸들러가 MSIP를 세운 뒤(4775 무렵 `mip_msip` = 1) MIE를 켜자 곧바로 `int_vec = 3`이 되고 MSI trap이 일어난다(4777).
+- C906은 우선순위가 낮은 인터럽트가 높은 것의 핸들러에 끼어드는 것도 막지 않는다. "어느 인터럽트를 중첩 허용할지"는 핸들러가 `mie`의 개별 비트를 골라 켜서 정한다. RISC-V 표준 M 모드에는 우선순위 단계별 자동 마스킹이 없다(그건 CLIC 같은 확장이 한다).
+
 ---
 
 ## 7. Simulation Exercises (유닛 테스트)
@@ -538,6 +573,7 @@ make run T=p5_sys03_pmp          # PMP, lock, sfence.vma
 make run T=p5_sys04_ext_irq      # TB 장치 외부 인터럽트: M vs S 진입, 위임, 보류 (6 절)
 make run T=p5_sys05_ipi          # IPI: CLINT MSIP, SBI 방식 S 전달, SSIP0, 우선순위 (6.6 절)
 make run T=p5_sys06_wfi_flag     # while (!int_flag) { wfi; } : 잠듦 -> 인터럽트 -> 플래그 -> 탈출 (6.7 절)
+make run T=p5_sys07_irq_nest     # MEI > MSI > MTI 우선순위, mret 에 실려 오는 인터럽트, 중첩 (6.8 절)
 make run T=p3_be04_trap          # 동기 예외들
 make web                         # 브라우저 파형 뷰어: 카드의 'MARK 구간' 에서 M1~M4 를 눌러 바로 열기
 ```
@@ -571,6 +607,10 @@ make web                         # 브라우저 파형 뷰어: 카드의 'MARK �
 - [ ] 루프를 `lw; beqz → wfi` 한 번(`if`)으로 바꾸면 MARK 2 가 어떻게 되는가 (예상: ID 36 에 깨어 플래그 0 으로 빠져나가 EXPECT 실패)
 - [ ] MARK 1 의 루프 직전에 `csrci mstatus, MIE` 를 넣으면? WFI 는 깨지만 핸들러로 가지 않아 플래그가 0 그대로다. 시뮬레이션이 어떻게 끝나는지 본다
 - [ ] MARK 1 의 IRQ0_SET 지연을 300 → 2~5 처럼 줄여 `lw` 와 `wfi` 사이에 인터럽트가 끼도록 만들 수 있는지 시도하고, 6.7 절의 MIE 를 끈 루프로 고친다
+
+### Lab 5.6: 우선순위와 중첩 (`p5_sys07_irq_nest`)
+- [ ] MARK 1에서 2번째, 3번째 인터럽트가 어떤 명령의 retire에 실렸는지 찾고, 그때 mepc가 바뀌지 않는 이유를 설명한다
+- [ ] 핸들러가 mstatus를 저장/복원하지 않으면 MARK 2에서 무엇이 깨지는지 예측한다 (힌트: 중첩된 trap이 MPP/MPIE를 덮어쓴다)
 
 ---
 

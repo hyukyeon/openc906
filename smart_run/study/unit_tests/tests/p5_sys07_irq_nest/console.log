@@ -1,0 +1,37 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+[tbdev] cycle 2974: IRQ0_SET 1
+[tbdev] cycle 2976: irq0 = 1  (PLIC ID 35)
+[irq] #1 cycle 3030: M-mode interrupt cause 11 on retire of pc 0000000342, priv 3 -> 3, mepc = 0000000346, PC -> 0000000140 (source up 53 cycles before)
+@@ irq1_src_to_trap_cycles = 53
+@@ irq1_trap_to_vector_retire_cycles = 12
+[tbdev] cycle 3389: irq0 = 0  (CLR, 413 cycles high)
+[irq] #2 cycle 3443: M-mode interrupt cause 3 on retire of pc 00000005d0, priv 3 -> 3, mepc = 0000000346, PC -> 0000000140 (source up 466 cycles before)
+@@ irq2_src_to_trap_cycles = 466
+@@ irq2_trap_to_vector_retire_cycles = 6
+[irq] #3 cycle 3542: M-mode interrupt cause 7 on retire of pc 00000005d0, priv 3 -> 3, mepc = 0000000346, PC -> 0000000140 (source up 565 cycles before)
+@@ irq3_src_to_trap_cycles = 565
+@@ irq3_trap_to_vector_retire_cycles = 6
+@@ m1_log_hex_as_dec = 148466332568331
+[irq] #4 cycle 4690: M-mode interrupt cause 7 on retire of pc 00000003d4, priv 3 -> 3, mepc = 00000003d6, PC -> 0000000140 (source up 2 cycles before)
+@@ irq4_src_to_trap_cycles = 2
+@@ irq4_trap_to_vector_retire_cycles = 6
+[irq] #5 cycle 4777: M-mode interrupt cause 3 on retire of pc 0000000560, priv 3 -> 3, mepc = 0000000562, PC -> 0000000140 (source up 5 cycles before)
+@@ irq5_src_to_trap_cycles = 5
+@@ irq5_trap_to_vector_retire_cycles = 6
+@@ m2_log_hex_as_dec = 2273510151
+[irq] #6 cycle 6008: M-mode interrupt cause 7 on retire of pc 0000000454, priv 3 -> 3, mepc = 0000000456, PC -> 0000000140 (source up 4 cycles before)
+@@ irq6_src_to_trap_cycles = 4
+@@ irq6_trap_to_vector_retire_cycles = 6
+[irq] #7 cycle 6228: M-mode interrupt cause 3 on retire of pc 00000005d0, priv 3 -> 3, mepc = 0000000456, PC -> 0000000140 (source up 142 cycles before)
+@@ irq7_src_to_trap_cycles = 142
+@@ irq7_trap_to_vector_retire_cycles = 6
+@@ m3_log_hex_as_dec = 2198046471
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish
