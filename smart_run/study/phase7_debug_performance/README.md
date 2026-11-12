@@ -228,31 +228,31 @@ DM ──→ │            DTU (aq_dtu_top)               │
 
 ### 4.2 Hardware Breakpoints (`aq_dtu_mcontrol.v`)
 
-```
-Trigger (Hardware Breakpoint):
+> ⚠️ v3 정정: 예전 표는 action 필드를 [5:0]으로, 값 0과 1의 의미를 반대로 적었다. 아래는 RTL(`aq_dtu_mcontrol.v:446-458, 515-517`)과 실측으로 확인한 내용이다.
 
-tdata1 (mcontrol):
-┌─────┬───────┬─────┬────────┬──────┬──────┐
-│type │dmode  │match│ action │execute│load  │
-│[63:60]│[59] │[10:7]│[5:0] │ [2]  │ [0]  │
-└─────┴───────┴─────┴────────┴──────┴──────┘
+C906에는 trigger가 **10개** 있다. 8개는 주소·데이터 비교용 mcontrol(type 2), 2개는 그 밖의 종류다(`cpu_cfig.h:261-265`, 실측 `tselect`에 0~9만 써진다). 소프트웨어는 `tselect`(0x7A0)로 하나를 고르고 `tdata1`(0x7A1)에 조건, `tdata2`(0x7A2)에 비교 값을 쓴다.
 
-tdata2: match value (address or data)
+**tdata1 (mcontrol, type = 2)**
 
-Match Types:
-- Address match: PC == tdata2 → breakpoint
-- Data match: load/store address == tdata2 → watchpoint
-- Instruction match: instruction encoding match
+| 비트 | 필드 | 뜻 |
+|---|---|---|
+| 63:60 | type | 2 = mcontrol (주소/데이터 비교) |
+| 59 | dmode | 1이면 debug mode에서만 고칠 수 있다 |
+| 20 | hit | 이 trigger가 걸렸음 (하드웨어가 세움) |
+| 19 | select | 0 = 주소 비교, 1 = 데이터 비교 |
+| 18 | timing | 0 = 명령을 **실행하기 전**에 trap, 1 = 실행한 뒤 |
+| 15:12 | action | **0 = breakpoint 예외(mcause 3)**, **1 = debug mode 진입**. 그 밖의 값은 0으로 고정된다 |
+| 11 | chain | 다음 trigger와 AND 조건으로 묶기 |
+| 10:7 | match | 0 = 같음, 1 = NAPOT, 2 = ≥, 3 = <, 4/5 = 아래/위 반쪽 마스크 비교 |
+| 6, 4, 3 | m, s, u | 어느 특권 모드에서 동작할지 |
+| 2, 1, 0 | execute, store, load | 무엇을 볼지: 명령 주소, store 주소, load 주소 |
 
-Actions:
-- 0: Enter Debug Mode (breakpoint)
-- 1: Raise breakpoint exception
+**tcontrol (0x7A5)**: M 모드에서 action = 0 trigger는 `tcontrol.MTE`(bit 3)가 1일 때만 동작한다(`aq_dtu_mcontrol.v:711`). trap이 들어가면 하드웨어가 MTE를 MPTE(bit 7)로 옮기고 0으로 만든다. 그래서 trap 핸들러 안에서는 같은 trigger가 다시 걸리지 않는다. `mret`이 MPTE를 MTE로 되돌린다.
 
 사용 예:
-  GDB: break *0x80001000
-  → tdata1.execute=1, tdata2=0x80001000
-  → CPU가 해당 PC 도달 시 Debug Mode 진입
-```
+
+- 실행 breakpoint (GDB의 `hbreak *0x2dc`): `tdata2 = 0x2dc`, `tdata1 = type 2 | m | execute`, action 0이면 예외, 1이면 debug mode
+- store watchpoint (GDB의 `watch var`): `tdata2 = &var`, `tdata1 = type 2 | m | store`
 
 ### 4.3 Debug CSRs
 
@@ -283,6 +283,31 @@ CDC (Clock Domain Crossing) 처리:
 - Pulse synchronizer: 펄스 신호 동기화
 - Handshake protocol: 데이터 전달 시
 ```
+
+### 4.5 실측 — `p7_dbg01_trigger`
+
+```bash
+cd smart_run/study/unit_tests && make run T=p7_dbg01_trigger     # GTKW 그룹: dbg rt
+```
+
+| MARK | 설정 | 결과 |
+|---|---|---|
+| (시작) | `tselect`에 0~15를 써 보기, `tinfo` 읽기 | trigger 10개, trigger 0의 `tinfo` = 4 (bit 2 = mcontrol 지원) |
+| 1 | 실행 breakpoint: `bp_target`의 주소, `tcontrol.MTE = 1` | 그 명령을 **실행하기 전에** mcause 3. mepc = mtval = `bp_target`. 핸들러가 trigger를 끄고 `mret`하면 그 명령이 다시 실행된다(한 번만 더해짐) |
+| 2 | store watchpoint: `watch_var` | 같은 주소의 `lw`는 통과, `sw`에서 trap. mepc = 그 `sw`, mtval = 데이터 주소. 돌아와서 store가 실행되어 값이 써진다 |
+| 3 | load watchpoint: `watch_var` | 4바이트 떨어진 주소의 `lw`는 통과, 같은 주소 `lw`에서 trap |
+| 4 | `tcontrol.MTE = 0`으로 같은 breakpoint | trap이 일어나지 않는다 |
+| (핸들러) | trap 안에서 `tcontrol` 읽기 | 128 = MPTE 1, MTE 0 |
+
+![실행 breakpoint - 명령을 실행하기 전에 mcause 3](../figures/wave_dbg_exec_bp.png)
+
+- 3604, 3615의 `rt_redirect`는 `csrw tdata2`, `csrw tdata1`이 retire될 때다. trigger CSR을 쓰면 파이프라인을 비우고 다시 fetch한다. 그래서 바로 뒤 명령부터 새 trigger가 적용된다.
+- 3623에 `bp_target`(0x2DC)이 retire 단계에서 예외로 처리되고 mtvec(0x140)으로 간다. 명령의 결과는 반영되지 않는다(timing = 0).
+
+![store watchpoint - lw 는 통과, sw 에서 trap](../figures/wave_dbg_store_wp.png)
+
+- `lw t3, 0(s4)`는 4448에 정상 retire된다. store 조건만 켰기 때문이다.
+- `sw`(0x35A)는 4452에 예외로 retire되고 mepc = 0x35A가 된다. 데이터 주소 비교는 LSU의 AG 단계에서 하고, 결과가 명령과 함께 retire까지 실려 간다.
 
 ---
 
@@ -426,10 +451,13 @@ gtkwave work/test.vcd
 
 ### Lab 7.2: Breakpoint 동작
 
-- [ ] Hardware breakpoint 설정 과정 관찰
-- [ ] tdata1, tdata2 레지스터 변화
-- [ ] Breakpoint hit 시 Debug Mode 진입
-- [ ] Single step 모드 동작
+```bash
+cd smart_run/study/unit_tests && make run T=p7_dbg01_trigger
+```
+
+- [ ] MARK 1의 mepc, mtval이 `bp_target` 주소인지 확인한다
+- [ ] 핸들러에서 trigger를 끄지 않으면 어떻게 되는지 예측한다 (같은 명령에서 다시 trap? `tcontrol`이 막아 주는 범위는?)
+- [ ] `tdata1`의 timing을 1로 바꾸면 mepc와 store 실행 여부가 어떻게 달라지는지 확인한다
 
 ### Lab 7.3: Performance Counter 관찰
 

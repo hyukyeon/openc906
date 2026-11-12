@@ -88,6 +88,9 @@ GROUPS = {
         ("asm_ex1", 320, "a"), ("fp_ex1_stall", 1, "b"), ("fp_fdsu_busy", 1, "b"),
         ("fp_wb_vld", 1, "b"), ("fp_wb_reg", 5, "d"), ("fp_fflags", 5, "b"), ("cp0_mstatus_fs", 2, "d"),
         ("asm_rt", 320, "a")]),
+    "dbg": ("Debug trigger (DTU)", [
+        ("dbg_tcontrol", 64, "h"), ("dbg_ifu_trig", 1, "b"), ("dbg_lsu_trig_en", 1, "b"),
+        ("asm_rt", 320, "a"), ("rt_expt", 1, "b"), ("cp0_mcause_code", 5, "d"), ("cp0_mepc", 64, "h")]),
     "axi": ("AXI handshake (BIU <-> SoC)", [
         ("bus_arvalid", 1, "b"), ("bus_arready", 1, "b"), ("bus_araddr", 40, "h"), ("bus_arlen", 8, "d"),
         ("bus_arburst", 2, "d"), ("ic_arvalid", 1, "b"), ("ic_arready", 1, "b"), ("bus_rvalid", 1, "b"), ("bus_rready", 1, "b"), ("bus_rdata_lo", 32, "h"),

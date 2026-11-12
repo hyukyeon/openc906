@@ -92,3 +92,8 @@ $S out/p6_fp01_latency --from-cycle 5088 --to-cycle 5130 --pad 0 --width 1600 --
   --signals "clk,cycle,-Execute,asm_ex1,fp_fdsu_busy,-FP write-back,fp_wb_vld,fp_wb_reg,-Retire,asm_rt" -o $FIG/wave_fp_fdiv.png
 $S out/p6_fp01_latency --from-cycle 8080 --to-cycle 8100 --pad 0 --height 460 \
   --signals "clk,cycle,-Retire,asm_rt,rt_expt,rt_redirect,rt_redirect_pc,-CP0,cp0_mstatus_fs,cp0_mcause_code,cp0_mepc" -o $FIG/wave_fp_fs_off.png
+# Phase 7 4.5 절 : 하드웨어 trigger (p7_dbg01_trigger)
+$S out/p7_dbg01_trigger --from-cycle 3600 --to-cycle 3628 --pad 0 --height 480 \
+  --signals "clk,cycle,mark,-Fetch,fe_if_pc,-Retire,asm_rt,rt_expt,rt_redirect,rt_redirect_pc,-Trap,cp0_mcause_code,cp0_mepc" -o $FIG/wave_dbg_exec_bp.png
+$S out/p7_dbg01_trigger --from-cycle 4438 --to-cycle 4458 --pad 0 --height 460 \
+  --signals "clk,cycle,mark,-Execute,asm_ex1,-Retire,asm_rt,rt_expt,rt_redirect_pc,-Trap,cp0_mcause_code,cp0_mepc" -o $FIG/wave_dbg_store_wp.png

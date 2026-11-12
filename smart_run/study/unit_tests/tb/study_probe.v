@@ -346,6 +346,15 @@ module study_probe;
   wire [1:0]  cp0_mstatus_fs  = `SP_TRAP.cp0_idu_fs[1:0];
 
   // --------------------------------------------------------------------------
+  // 7-5. 디버그 trigger (Phase 7, p7_dbg01_trigger) : DTU 가 명령/주소에 붙이는 halt info
+  // --------------------------------------------------------------------------
+  wire        dbg_ifu_trig    = `SP_CPU_TOP.x_aq_top_0.x_aq_dtu_top.dtu_ifu_halt_info_vld;
+  wire        dbg_lsu_trig_en = `SP_CPU_TOP.x_aq_top_0.x_aq_dtu_top.dtu_lsu_addr_trig_en;
+  wire        dbg_lsu_trig    = `SP_CPU_TOP.x_aq_top_0.x_aq_dtu_top.dtu_lsu_halt_info_vld;
+  wire [63:0] dbg_tval        = `SP_CPU_TOP.x_aq_top_0.x_aq_dtu_top.dtu_rtu_pending_tval;
+  wire [63:0] dbg_tcontrol    = `SP_CPU_TOP.x_aq_top_0.x_aq_dtu_top.x_aq_dtu_ctrl.tcontrol;
+
+  // --------------------------------------------------------------------------
   // 7-2. AHB (axi2ahb -> ahb) : master 쪽 신호 + slave 선택
   // --------------------------------------------------------------------------
   wire [1:0]  ahb_htrans      = tb.x_soc.biu_pad_htrans[1:0];

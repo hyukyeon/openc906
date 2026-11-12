@@ -1,0 +1,16 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ trigger_count = 10
+@@ tinfo_trigger0 = 4
+@@ m1_mcause = 3
+@@ m1_tcontrol_in_handler = 128
+@@ m2_mcause = 3
+@@ trap_count = 3
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish
