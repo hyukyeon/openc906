@@ -1,0 +1,29 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ baseline_tictoc = 3
+@@ m1_fadd_d_chain16 = 85
+@@ m2_fadd_d_indep16 = 41
+@@ m3_fmul_d_chain16 = 85
+@@ m4_fmadd_d_chain16 = 108
+@@ m5_fdiv_d_1_3 = 39
+@@ m5_fdiv_d_2_2 = 17
+@@ m5_fsqrt_d_2 = 39
+@@ m5_fdiv_s_1_3 = 31
+@@ fflags_1_div_0 = 8
+@@ fflags_0_div_0 = 16
+@@ fflags_1_div_3 = 1
+@@ fflags_big_mul = 5
+@@ fflags_tiny_mul = 3
+@@ fs_after_fp_ops = 3
+@@ fs_off_mcause = 2
+@@ fs_off_mtval = 35746003
+@@ fs_after_set_initial = 1
+@@ fs_after_one_fadd = 3
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

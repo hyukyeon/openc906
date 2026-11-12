@@ -83,3 +83,12 @@ $S out/p4_mem05_writeback --from-cycle 3566 --to-cycle 3580 --pad 0 --height 620
 $S out/p4_mem05_writeback --from-cycle 5026 --to-cycle 5060 --pad 0 --height 520 \
   --signals "clk,cycle,mark,-Retire,asm_rt,-AXI 쓰기,bus_awvalid,bus_awaddr,bus_awlen,bus_wvalid,bus_wlast,bus_bvalid" \
   -o $FIG/wave_wb_cva.png
+# Phase 6 8.0 절 : FPU latency, FDSU, FS (p6_fp01_latency)
+$S out/p6_fp01_latency --from-cycle 3298 --to-cycle 3322 --pad 0 --height 460 \
+  --signals "clk,cycle,-Execute,asm_ex1,fp_ex1_stall,-FP write-back,fp_wb_vld,fp_wb_reg,-Retire,asm_rt" -o $FIG/wave_fp_chain.png
+$S out/p6_fp01_latency --from-cycle 3768 --to-cycle 3794 --pad 0 --height 460 \
+  --signals "clk,cycle,-Execute,asm_ex1,fp_ex1_stall,-FP write-back,fp_wb_vld,fp_wb_reg,-Retire,asm_rt" -o $FIG/wave_fp_indep.png
+$S out/p6_fp01_latency --from-cycle 5088 --to-cycle 5130 --pad 0 --width 1600 --height 460 \
+  --signals "clk,cycle,-Execute,asm_ex1,fp_fdsu_busy,-FP write-back,fp_wb_vld,fp_wb_reg,-Retire,asm_rt" -o $FIG/wave_fp_fdiv.png
+$S out/p6_fp01_latency --from-cycle 8080 --to-cycle 8100 --pad 0 --height 460 \
+  --signals "clk,cycle,-Retire,asm_rt,rt_expt,rt_redirect,rt_redirect_pc,-CP0,cp0_mstatus_fs,cp0_mcause_code,cp0_mepc" -o $FIG/wave_fp_fs_off.png

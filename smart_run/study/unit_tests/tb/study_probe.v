@@ -336,6 +336,16 @@ module study_probe;
   wire [1:0]  bus_bresp       = tb.x_soc.pad_biu_bresp[1:0];
 
   // --------------------------------------------------------------------------
+  // 7-4. FPU (Phase 6, p6_fp01_latency)
+  // --------------------------------------------------------------------------
+  wire        fp_wb_vld       = `SP_CORE.x_aq_vpu_top.vpu_vidu_fp_wb_vld;
+  wire [4:0]  fp_wb_reg       = `SP_CORE.x_aq_vpu_top.vpu_vidu_fp_wb_reg[4:0];
+  wire        fp_ex1_stall    = `SP_CORE.x_aq_vpu_top.vpu_vidu_vex1_fp_stall;
+  wire        fp_fdsu_busy    = `SP_CORE.x_aq_vpu_top.vfdsu_vpu_busy;
+  wire [4:0]  fp_fflags       = `SP_CP0.x_aq_cp0_regs.x_aq_cp0_float_csr.fcsr_fflags[4:0];
+  wire [1:0]  cp0_mstatus_fs  = `SP_TRAP.cp0_idu_fs[1:0];
+
+  // --------------------------------------------------------------------------
   // 7-2. AHB (axi2ahb -> ahb) : master 쪽 신호 + slave 선택
   // --------------------------------------------------------------------------
   wire [1:0]  ahb_htrans      = tb.x_soc.biu_pad_htrans[1:0];

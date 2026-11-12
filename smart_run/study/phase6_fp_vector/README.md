@@ -2,7 +2,7 @@
 
 > **기간**: Week 10-11
 > **목표**: IEEE 754 부동소수점 연산의 하드웨어 구현과 FPU 파이프라인 구조를 이해한다.
-> ⚠️ v2 정정: (1) 오픈 C906 은 **V 확장이 꺼져 있다**(misa.V=0) — 이 Phase 는 스칼라 FPU 중심이고, RVV 와의 관계는 10 절 (2) FP 유닛은 `aq_vpu_top` 아래에 있다 (3) FDSU 는 radix-4 SRT, **4~17 cycle** (UM 2.2.3)
+> ⚠️ v2 정정: (1) 오픈 C906 은 **V 확장이 꺼져 있다**(misa.V=0) — 이 Phase 는 스칼라 FPU 중심이고, RVV 와의 관계는 10 절 (2) FP 유닛은 `aq_vpu_top` 아래에 있다 (3) FDSU 는 radix-4 SRT, UM 2.2.3 의 4~17 cycle 은 단정밀도에 맞고, 실측은 **fdiv.s 17 / fdiv.d·fsqrt.d 32 cycle** (8.0 절)
 
 ---
 
@@ -356,7 +356,7 @@ dividend / divisor = quotient
 3. 최종 quotient 조립
 4. Rounding
 
-Latency: UM 기준 4~17 cycle (radix-4 SRT, 사이클당 몫 2bit). 정수 나눗셈기와 마찬가지로 가변.
+Latency: UM 기준 4~17 cycle (radix-4 SRT, 사이클당 몫 2bit). 실측(8.0 절)은 FDSU busy 기준 fdiv.s 17, fdiv.d 와 fsqrt.d 32 cycle 로, 4~17 은 단정밀도 범위로 보인다. 정수 나눗셈기와 마찬가지로 피연산자에 따라 짧아질 수 있다(2.0/2.0 은 5 cycle).
 
 Square Root:
 - SRT 알고리즘의 변형
@@ -444,6 +444,63 @@ Classify:
 ---
 
 ## 8. Simulation Exercises
+
+### 8.0 실측 — `p6_fp01_latency`
+
+```bash
+cd smart_run/study/unit_tests && make run T=p6_fp01_latency     # GTKW 그룹: fp ex rt
+```
+
+**latency와 throughput** (사이클 = TIC/TOC 차이, 빈 TIC/TOC = 3)
+
+| MARK | 측정 | 결과 | 해석 |
+|---|---|---|---|
+| 1 | `fadd.d` 의존 체인 × 16 | 85 | FP write-back이 **5 사이클마다** 한 번 → latency 5 |
+| 2 | `fadd.d` 독립 × 16 (목적 레지스터 4개를 돌려 씀) | 41 | 4개 연속 뒤 1 사이클 쉼. 같은 레지스터를 5 사이클 안에 다시 쓰면 WAW로 기다린다 → 매 사이클 하나씩 내려면 독립 레지스터가 5개 이상 필요 |
+| 3 | `fmul.d` 의존 체인 × 16 | 85 | latency 5 (fadd.d와 같음) |
+| 4 | `fmadd.d` 의존 체인 × 16 | 108 | write-back 6 사이클 간격 → latency 6 |
+| 5 | `fdiv.d` 1/3 | 39 | FDSU busy **32 사이클** |
+| 5 | `fdiv.d` 2/2 | 17 | FDSU busy 5 사이클 (짧아지는 원인은 확인하지 않음) |
+| 5 | `fsqrt.d` √2 | 39 | FDSU busy 32 사이클 |
+| 5 | `fdiv.s` 1/3 | 31 | FDSU busy **17 사이클** — UM의 4~17은 이 범위 |
+
+![fadd.d 의존 체인 - 5 사이클 간격](../figures/wave_fp_chain.png)
+
+의존 체인에서는 `fadd.d`가 5 사이클마다 하나씩 retire된다(3305, 3310, 3315, 3320). 다음 `fadd.d`는 앞 결과(f1)를 기다려야 하기 때문이다. 정수 MUL(latency 3)보다 길다.
+
+![fadd.d 독립 - 4 개 연속 뒤 1 사이클 쉼](../figures/wave_fp_indep.png)
+
+![fdiv.d - FDSU 가 32 사이클 동안 busy](../figures/wave_fp_fdiv.png)
+
+FDSU는 반복형이라 busy 동안 다음 나눗셈/제곱근을 받지 않는다. 다른 FP 명령은 의존이 없으면 계속 진행할 수 있다.
+
+**fflags** (MARK 6, 연산마다 `fsflags zero`로 지우고 `frflags`로 읽음)
+
+| 연산 | fflags | 비트 |
+|---|---|---|
+| 1.0 / 0.0 | 0x08 | DZ (0으로 나누기) |
+| 0.0 / 0.0 | 0x10 | NV (정의되지 않음, 결과 NaN) |
+| 1.0 / 3.0 | 0x01 | NX (반올림됨) |
+| 1e300 × 1e300 | 0x05 | OF + NX (오버플로) |
+| 1e-300 × 1e-300 | 0x03 | UF + NX (언더플로) |
+
+fflags는 누적(sticky) 비트라 소프트웨어가 지우기 전까지 남는다. 예외가 나도 trap은 일어나지 않는다. RISC-V FP는 플래그만 세우고 기본값(∞, NaN, 0 등)을 결과로 낸다.
+
+**mstatus.FS** (MARK 7)
+
+| 단계 | FS | 결과 |
+|---|---|---|
+| FP 명령을 쓴 뒤 | 3 (Dirty) | FP 상태가 바뀌었음. OS는 문맥 전환 때 FP 레지스터를 저장해야 한다 |
+| `csrc`로 FS = 0 (Off) | 0 | 그 뒤 `fadd.d` → **illegal instruction** (mcause 2), mtval = 0x022170D3 (그 명령의 인코딩) |
+| FS = 1 (Initial) | 1 | |
+| `fadd.d` 한 번 | 3 (Dirty) | 하드웨어가 FP 레지스터를 고치는 순간 Dirty로 올린다 |
+
+![FS = Off 에서 fadd.d → illegal instruction](../figures/wave_fp_fs_off.png)
+
+- `mstatus`를 쓰는 `csrc`가 retire될 때 `rt_redirect`가 1이 된다. CSR 쓰기 뒤 파이프라인을 비우고 다시 fetch하는 것이다(8088).
+- 6 사이클 뒤 `fadd.d`가 retire 단계에서 예외로 처리되고(8094) mtvec(0x140)으로 간다. mepc = 0x5A6은 그 `fadd.d`의 주소다.
+- FS = Off는 OS가 "이 프로세스는 아직 FP를 안 쓴다"고 표시해 두고, 첫 FP 명령에서 trap을 받아 그때 FP 문맥을 준비하는 lazy 방식에 쓰인다.
+
 
 ### Lab 6.1: FP 명령어 실행 관찰
 
