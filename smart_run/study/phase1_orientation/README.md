@@ -347,7 +347,7 @@ C906 코어가 내는 40bit 물리 주소는 세 곳 중 하나로 간다. 이 �
 | 0x00_2000_0000 ~ 0x3F_FFFF_FFFF | 미매핑 (ERR2) | — | `axi_err128`(`x_axi_err1`). 위와 같이 OKAY 응답, 읽기 0 |
 | 0x40_0000_0000 ~ 0x40_03FF_FFFF | **PLIC** (CPU 내부) | 소스 우선순위, pending, enable, threshold, claim/complete | LSU → BIU `apbif` → PLIC (AXI로 나가지 않음) |
 | 0x40_0400_0000 ~ 0x40_0400_FFFF | **CLINT** (CPU 내부) | MSIP, mtimecmp, SSIP. mtime은 MMIO가 아니라 `time` CSR로 읽는다 | LSU → BIU `apbif` → CLINT |
-| 0x40_0401_0000 ~ 0x40_07FF_FFFF | CPU 내부 APB 창의 빈 곳 | — | BIU가 가로채지만 PLIC/CLINT 어느 쪽도 선택되지 않는다(응답 동작은 확인하지 않음) |
+| 0x40_0401_0000 ~ 0x40_07FF_FFFF | CPU 내부 APB 창의 빈 곳 | — | BIU가 가로채지만 PLIC/CLINT 어느 쪽도 선택되지 않아 `apbif`가 곧바로 에러(perr)로 끝낸다 → **비동기 load access fault**(mcause 5, Phase 8의 2.4절) |
 | 0x40_0800_0000 ~ 0xFF_FFFF_FFFF | 미매핑 (ERR2) | — | CPU 내부 APB 창(128MB) 밖이라 AXI로 나가 `axi_err128`이 받는다. OKAY 응답, 읽기 0 |
 
 **SRAM 구성**: `axi_slave128` 안에 `f_spsram_524288x128`(512K × 16B = 8MB)이 두 개 있다. 주소 bit 23이 0이면 L(0x0~0x7F_FFFF), 1이면 H(0x80_0000~0xFF_FFFF)를 쓴다(`axi_slave128.v:525-526`). 테스트벤치는 `inst.pat`을 0x0부터, `data.pat`을 0x40000부터 L에 적재한다.
@@ -364,9 +364,11 @@ C906 코어가 내는 40bit 물리 주소는 세 곳 중 하나로 간다. 이 �
 | 0x1001_9000 | GPIO (PS5) | 8bit GPIO |
 | 0x1001_A000 | bus_delay (PS8) | `axi_fifo`의 읽기 지연 값(Phase 4의 5절) |
 | 0x1F00_0000 ~ 0x1F01_FFFF | AHB RAM (`mem_ctrl`, AHB S1) | APB가 아니라 AHB에 직접 붙은 RAM. 테스트에서는 쓰지 않는다 |
-| 0x1F02_0000 ~ 0x1FFF_FFFF | AHB 기본 슬레이브 (`err_gen`) | AHB **ERROR 응답**(hresp = 01). AXI 쪽 응답으로 어떻게 바뀌는지는 확인하지 않았다 |
+| 0x1F02_0000 ~ 0x1FFF_FFFF | AHB 기본 슬레이브 (`err_gen`) | AHB **ERROR 응답**(hresp = 01). `axi2ahb`가 AXI rresp = 2(SLVERR)로 바꿔 load는 **비동기 load access fault**가 된다(Phase 8의 2.4절) |
 
 PS 슬롯 어디에도 해당하지 않는 0x1000_0000~0x1EFF_FFFF 주소(예: PS3, PS9 자리)의 동작은 확인하지 않았다.
+
+**scalar load로 어디까지 읽히나**: M-mode의 load는 40bit 공간 어디든 나가고, 결과는 응답하는 쪽이 정한다. 미매핑은 OKAY + 0, 위 두 에러 구간은 비동기 access fault, 40bit를 넘는 주소는 상위 비트가 버려져 alias다. 영역별 지연(D-Cache hit 2, SRAM miss 약 11, 주변장치 12~20, CLINT 10, PLIC 18 + `axi_fifo` 대기)과 그 이유는 Phase 8의 2.4절(`p8_bus02_ld_region`)에 있다.
 
 #### MMU sysmap — 주소마다 붙는 속성
 
@@ -375,6 +377,7 @@ PS 슬롯 어디에도 해당하지 않는 0x1000_0000~0x1EFF_FFFF 주소(예: P
 버스 경로와 별개로, 코어는 `mmu/rtl/sysmap.h`의 8개 영역 표(Phase 4의 3.4절)로 주소마다 **속성**(캐시 가능 여부, 장치 여부)을 정한다. 영역 i는 `[BASE_{i-1}, BASE_i)`이고 4KB 단위다. 속성 비트는 `{SO, C, B, SH, SEC}` 순서다(`aq_mmu_regs.v`의 `mel_so/c/b/sh/sec`).
 
 - SRAM과 SoC 주변장치 창은 모두 **R0(캐시 가능)** 안에 있다. 그래서 UART(0x1001_5000)나 bus_delay에 `sw`를 하면 D-Cache에만 머물고 AXI로 나가지 않는다. 버스로 내보내려면 D-Cache를 잠시 끄거나(MHCR.DE=0, Phase 4의 3.4절), 유닛 테스트처럼 다른 콘솔 채널(`mscratch`, 7절)을 쓴다.
+- R0은 SO(strongly-ordered)가 아니라서, DE=0이어도 주변장치 load는 16B, store는 8B 정렬 주소로 나간다. 16B 정렬이 아닌 APB 레지스터(예: timer 현재값 0x1001_1004)는 제대로 읽히지 않는다(Phase 8의 2.4절).
 - PLIC/CLINT가 있는 0x40_0000_0000은 **R6(장치, 캐시 불가, strongly-ordered)** 이다.
 - MMU를 켜고 페이지 테이블에 T-Head 확장 속성(MAEE)을 쓰면 sysmap 대신 PTE의 속성을 쓴다(`aq_mmu_ptw.v:719-720`).
 
@@ -425,7 +428,7 @@ smart_run/study/unit_tests/
 │   ├── study_tbdev.v     # TB 장치: SoC 외부 인터럽트 선 구동 (store 로 제어, Phase 5 6 절)
 │   ├── soc_overlay/      # SoC 파일 학습용 사본 (cpu_sub_system_axi.v: 외부 인터럽트 입력 추가, 원본과 한 줄 차이)
 │   └── sim_top.v         # Verilator 용 래퍼 (tb + study_probe + study_tbdev)
-├── tests/                # 테스트 27 개, 폴더 하나에 하나: tests/<test>/<test>.S
+├── tests/                # 테스트 28 개, 폴더 하나에 하나: tests/<test>/<test>.S
 │   └── p5_sys06_wfi_flag/ #   <test>.S + 실행 후 복사되는 <test>.objdump, console.log (git 에 함께 올라감)
 ├── tools/                # mk_asm_rom / mk_gtkw / pipeview / vcd_query / wave_snap / collect_results / wave_web
 ├── web/                  # 브라우저 파형 뷰어 (테스트 목록 index.html + Surfer WASM)

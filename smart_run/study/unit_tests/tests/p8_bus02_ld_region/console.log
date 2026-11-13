@@ -1,0 +1,80 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ empty_cyc = 5
+@@ warm_hit_cyc = 7
+@@ sram_lo_miss_cyc = 21
+@@ sram_lo_miss_val = 0
+@@ sram_lo_hit_cyc = 7
+@@ sram_lo_hit_val = 0
+@@ sram_hi_miss_a_cyc = 126
+@@ sram_hi_miss_a_val = 0
+@@ sram_hi_miss_b_cyc = 70
+@@ sram_hi_miss_b_val = 0
+@@ sram_hi_miss_c_cyc = 172
+@@ sram_hi_miss_c_val = 0
+@@ sram_hi_miss_d_cyc = 153
+@@ sram_hi_miss_d_val = 0
+@@ sram_top_miss_cyc = 140
+@@ sram_top_miss_val = 0
+@@ sram_lo_unc_cyc = 16
+@@ sram_lo_unc_val = 0
+@@ sram_hi_unc_cyc = 145
+@@ sram_hi_unc_val = 0
+@@ err1_miss_cyc = 60
+@@ err1_miss_val = 0
+@@ err1_unc_cyc = 189
+@@ err1_unc_val = 0
+@@ apb_bdly_unc_cyc = 142
+@@ apb_bdly_unc_val = 0
+@@ apb_timer_unc_cyc = 73
+@@ apb_timer_unc_val = 0
+@@ apb_bdly_miss_cyc = 76
+@@ apb_bdly_miss_val = 0
+@@ apb_bdly_hit_cyc = 7
+@@ apb_bdly_hit_val = 0
+@@ ahb_ram_unc_cyc = 150
+@@ ahb_ram_unc_val = 2823600404
+@@ ahb_ram_miss_cyc = 141
+@@ ahb_ram_miss_val = 3507050071
+@@ ahb_err_unc_cause = 5
+@@ ahb_err_unc_epc_off = 8
+@@ ahb_err_unc_trap_entry = 245
+@@ err2_unc_cyc = 120
+@@ err2_unc_val = 0
+@@ err2_miss_cyc = 71
+@@ err2_miss_val = 0
+@@ plic_prio_lw_cyc = 34
+@@ plic_prio_lw_val = 0
+@@ plic_prio_ld_cyc = 25
+@@ plic_prio_ld_val = 0
+@@ clint_cmp_lw_cyc = 26
+@@ clint_cmp_lw_val = 4294967295
+@@ capb_hole_lw_cause = 5
+@@ capb_hole_lw_epc_off = 8
+@@ capb_hole_lw_trap_entry = 31
+@@ above_capb_lw_cyc = 73
+@@ above_capb_lw_val = 0
+@@ err2_r7_miss_cyc = 195
+@@ err2_r7_miss_val = 0
+@@ pa_over40_ld_cyc = 30
+@@ pa_over40_ld_val = 3987
+@@ sram_lo_unc_b_cyc = 16
+@@ sram_lo_unc_b_val = 0
+@@ sram_lo_unc_c_cyc = 16
+@@ sram_lo_unc_c_val = 0
+@@ timer1_cur_unc_cyc = 169
+@@ timer1_cur_unc_val = 0
+@@ t1_ist_miss_cyc = 101
+@@ t1_ist_miss_val = 0
+@@ t1_ist_unc_cyc = 99
+@@ t1_ist_unc_val = 1
+@@ t1_ist_hit_cyc = 7
+@@ t1_ist_hit_val = 0
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

@@ -28,7 +28,7 @@ make run T=... SIM=iverilog      # 원본 시뮬레이터 (느림)
 | `tb/soc_overlay/*.v` | `smart_run/logical` 의 같은 이름 SoC 파일 대신 쓰는 사본. `cpu_sub_system_axi.v` 는 외부 인터럽트 입력 한 줄만 다르다 |
 | `tb/sim_top.v` | Verilator 래퍼 top (tb + study_probe + study_tbdev) |
 | `common/crt0.S`, `lib.S`, `study.h`, `linker.ld` | 런타임, 매크로 |
-| `tests/<test>/` | 테스트 27 개. 폴더마다 `<test>.S`(헤더 주석에 목적과 MARK 의미) + 실행 후 복사되는 `<test>.objdump`, `console.log`(측정값 `@@`). VCD/trace/pipeview 는 `out/<test>/` 에만 있다 |
+| `tests/<test>/` | 테스트 28 개. 폴더마다 `<test>.S`(헤더 주석에 목적과 MARK 의미) + 실행 후 복사되는 `<test>.objdump`, `console.log`(측정값 `@@`). VCD/trace/pipeview 는 `out/<test>/` 에만 있다 |
 | `patches/gshare_lite/aq_ifu_bht.v` | BHT 열 선택에 PC[3:1] XOR 하는 실험 패치 |
 
 주의

@@ -291,7 +291,7 @@ LSU: ld_data_vld   └ (critical word 도착 즉시)
 CPU 밖(smart_run/logical) 의 `axi_fifo` 가 AR 요청을 FIFO 에 넣고, 엔트리마다 카운터가 0 이 되면 메모리로 보낸다.
 
 ```verilog
-// smart_run/logical/axi/axi_fifo.v:205-208 - 0x0~0x1FFFF 의 cacheable 읽기만 '지연 레지스터 값'을 로드
+// smart_run/logical/axi/axi_fifo.v:205-208 - 0x0~0x1FFFF 이고 arcache[2]=1 인 읽기만 '지연 레지스터 값'을 로드
 assign araddr_hit = (biu_pad_araddr >= SRAM_START) && (biu_pad_araddr <= SRAM_END) // 0x0 ~ 0x1FFFF
                  &&  biu_pad_arcache[2];
 assign create_vld = create_en && araddr_hit;          // counter_load = read_delay (APB 0x1001A000, 기본 0)
@@ -304,6 +304,7 @@ assign create_vld = create_en && araddr_hit;          // counter_load = read_del
 | 그 밖 (예: .data 의 0x40000~) | free-running 카운터 위상에 따라 **0~200 cycle 가변** |
 | 다른 읽기 뒤에 줄 선 요청 | 자기 카운터가 0 이 되는 순간을 놓치면 **약 200 cycle 추가** |
 
+- `arcache[2]` 는 MHCR.DE 가 아니라 **sysmap 속성(C)** 에서 온다(`aq_lsu_lfb.v:679`, `aq_lsu_lfb_entry.v:574`). 그래서 DE=0 으로 읽어도 0x0~0x1FFFF 면 지연이 고정이다(`p8_bus02_ld_region` MARK 8, 28, 29 = 16 cycle). 영역별 지연 분해는 Phase 8 의 2.4 절.
 - 그래서 `p4_mem01` 은 버퍼를 0x10000~0x1FFFF 에 두고, `bus_delay` 를 0/100 으로 바꿔 가며 측정한다. `bus_delay`(APB 0x1001_A000) 역시 cacheable 구간이라 MHCR.DE 를 잠시 끄고 쓴다.
 - 처음 0x40000 대 버퍼로 측정했을 때 line 당 약 100 cycle, 요청마다 14~191 cycle 로 들쭉날쭉했던 원인이 이것이다(`tools/vcd_query.py` 로 AR valid→ready 간격을 세어 확인).
 

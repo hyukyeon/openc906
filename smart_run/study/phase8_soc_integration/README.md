@@ -2,7 +2,7 @@
 
 > **기간**: Week 13+
 > **목표**: SoC 전체 통합 구조를 이해하고, 커스텀 테스트 작성 및 성능 분석을 수행한다.
-> ⚠️ v2 정정: (1) CLINT/PLIC 는 SoC 버스의 슬레이브가 아니라 **CPU top(openC906) 안**에 있다 (2) SRAM 모델은 8MB × 2 (3) SoC 의 메모리 지연 모델(axi_fifo)과 그 영향(Phase 4 의 5 절) (4) 커스텀 테스트는 유닛 테스트 환경 사용을 권장(4.4 절) (5) 2-issue 등 고급 주제는 부록 B. (6) v3: AHB 는 32bit 가 아니라 **128bit**, AXI 버스트는 최대 16 beat 가 아니라 **4 beat**, 미매핑 구간(axi_err128)은 에러가 아니라 **OKAY 응답**.
+> ⚠️ v2 정정: (1) CLINT/PLIC 는 SoC 버스의 슬레이브가 아니라 **CPU top(openC906) 안**에 있다 (2) SRAM 모델은 8MB × 2 (3) SoC 의 메모리 지연 모델(axi_fifo)과 그 영향(Phase 4 의 5 절) (4) 커스텀 테스트는 유닛 테스트 환경 사용을 권장(4.4 절) (5) 2-issue 등 고급 주제는 부록 B. (6) v3: AHB 는 32bit 가 아니라 **128bit**, AXI 버스트는 최대 16 beat 가 아니라 **4 beat**, 미매핑 구간(axi_err128)은 에러가 아니라 **OKAY 응답**. (7) v4: 영역별 scalar load 의 가능 여부·지연·예외와 그 이유(2.4절, `p8_bus02_ld_region`): AHB 기본 슬레이브와 CPU 내부 APB 빈 곳은 **비동기 load access fault**, 주변장치 창은 SO 가 아니라 **16B 정렬 레지스터만 제대로 읽힌다**.
 
 ---
 
@@ -274,8 +274,91 @@ APB 전송 자체는 setup 1 + access 1 = 2 사이클로 끝난다. 이 읽기�
 | 3022 | `lw` 결과를 쓰는 다음 명령이 retire된다 |
 
 - 이 구간 동안 `bus_arvalid`, `bus_awvalid`는 한 번도 1이 되지 않는다. PLIC 접근은 **AXI로 나가지 않는다**(1.2절).
-- setup이 2 사이클인 것은 CPU 내부 APB 클럭이 CPU 클럭의 절반이기 때문이다(`aq_mp_clk_top.v:67`, Phase 5의 6절). access가 10 사이클(APB 클럭 5개) 이어지는 원인은 확인하지 않았다.
+- setup이 2 사이클인 것은 CPU 내부 APB 클럭이 CPU 클럭의 절반이기 때문이다(`aq_mp_clk_top.v:67`, Phase 5의 6절). access가 10 사이클(APB 클럭 5개) 이어지는 것은 PLIC 내부 APB 매트릭스의 flop 단계 때문이다(2.4절, CLINT 는 같은 구간이 훨씬 짧다).
 - `lw`는 2989에 retire되었지만 데이터는 3016에야 온다. retire와 write-back이 다른 시점이라는 Phase 3의 3.6절이 여기서 그대로 보인다.
+
+### 2.4 영역별 scalar load — 되는가, 몇 사이클인가 (`p8_bus02_ld_region`)
+
+1.3절의 메모리 맵 각 영역에 `ld`/`lw`를 하나씩 보내 **접근 가능 여부, 읽힌 값, 예외, 지연**을 쟀다. 측정은 모두 같은 함수(`TIC ; ld ; 결과 사용 ; TOC`)로 하고, 파형에서 단계별 사이클을 셌다. 결론부터 적으면 다음과 같다.
+
+- **M-mode의 scalar load는 40bit 물리 주소 공간 어디든 막히지 않고 나간다.** MMU가 꺼져 있으면 PMP(crt0가 전체 RWX로 열어 둠)만 검사하고, 주소를 해석하는 것은 버스 쪽이다. 그래서 "접근이 되는가"는 **그 주소에 무엇이 응답하느냐**로 정해진다.
+- 응답이 없는 곳은 세 가지로 갈린다: SoC 미매핑(ERR1/ERR2)은 **OKAY + 0**, AHB 기본 슬레이브와 CPU 내부 APB 창의 빈 곳은 **load access fault(비동기)**, 40bit를 넘는 주소는 **상위 비트가 버려져 다른 주소(alias)를 읽는다**.
+- 지연은 **D-Cache hit(2) ≪ SRAM miss(약 11) < SoC 주변장치(12~20) 이고, 여기에 SoC 지연 모델 `axi_fifo`의 대기(1 또는 0~200)가 더해진다.** CPU 내부 APB(CLINT 10, PLIC 18)는 `axi_fifo`를 거치지 않아 항상 같다.
+
+#### 영역별 결과
+
+![영역별 scalar load 지연 분해](../figures/f12_ld_region.png)
+
+표의 fifo 대기와 실측 전체는 마지막 실행 값이다(`out/p8_bus02_ld_region/console.log`). 그림의 가로축은 load가 DC(EX2) 단계에 있던 사이클을 0으로 둔 상대 사이클이고, 막대 끝은 데이터가 파이프라인(`lsu_rtu_ex2_data_vld`)으로 돌아온 시점이다. `axi_fifo` 대기는 1로 그렸다. 아래 표의 "실측 전체"는 `TIC`~`TOC` 사이클(빈 측정 = 5, D-Cache hit = 7)이다.
+
+| 영역 (주소) | sysmap | 접근 방식 | 결과 | DC → 데이터 (fifo 제외) | fifo 대기 | 실측 전체 |
+|---|---|---|---|---|---|---|
+| SRAM 0x1_0000 | R0 C | 캐시 hit | 정상 | 0 (hit) | — | 7 |
+| SRAM 0x1_0000 | R0 C | 캐시 miss (line fill) | 정상 | 6 + 2 + 2 = 10 | **1 (고정)** | 21 |
+| SRAM 0x1_0040 | R0 C | DE=0 | 정상 | 4 + 2 + 2 = 8 | **1 (고정)** | 16 (3회 모두) |
+| SRAM 0x6_0000~, 0x10_0000 | R0 C | 캐시 miss | 정상 | 10 | 50~152 | 70~172 |
+| SRAM 0x6_0100 | R0 C | DE=0 | 정상 | 8 | 130 | 145 |
+| ERR1 0x0100_0000, ERR2 0x2000_0000 | R0 C | miss / DE=0 | OKAY, 0 | 10 / 8 | 31~174 | 60~189 |
+| AHB RAM 0x1F00_0000 | R0 C | DE=0 / miss | 정상 (초기화 안 된 값) | 4+4+2 = 10 / 6+7+2 = 15 | 119~124 | 141~150 |
+| SoC APB bus_delay, timer | R0 C | DE=0 | 정상 (16B 정렬 레지스터만, 아래) | 4 + 5 + 2 = 11 | 46~142 | 73~169 |
+| SoC APB bus_delay | R0 C | 캐시 miss | line fill — APB를 4번 읽음 | 6 + 11 + 2 = 19 | 50 | 76 |
+| SoC APB bus_delay | R0 C | 캐시 hit | **캐시의 옛 값** (아래) | 0 | — | 7 |
+| AHB 기본 슬레이브 0x1F02_0000 | R0 C | DE=0 | **load access fault** (mcause 5) | rresp=2 뒤 3 cycle에 trap | 195 | — |
+| CLINT mtimecmp | R6 SO | 항상 uncached | 정상 | **10** | 없음 | 26 |
+| PLIC 우선순위 (`lw`, 8B 정렬 `ld`) | R6 SO | 항상 uncached | 정상 | **18** | 없음 | 25~34 |
+| CPU APB 빈 곳 0x40_0401_0000 | R6 SO | — | **load access fault** (mcause 5) | perr 뒤 3 cycle에 trap | 없음 | — |
+| 0x40_0800_0000 (창 밖) | R6 SO | uncached | OKAY, 0 (ERR2) | 8 | 49 | 73 |
+| 0x50_0000_0000 | R7 C | 캐시 miss | OKAY, 0 (ERR2) | 10 | 166 | 195 |
+| 0x100_0000_0000 (40bit 초과) | — | 캐시 miss | **주소 0을 읽음** (`li x31,0` = 0xF93) | 10 | 1 | 30 |
+
+같은 영역의 숫자가 실행마다 다른 것(예: SRAM 0x6_0000 miss가 이번 실행 126, 앞선 실행 204)은 전부 `axi_fifo` 대기 때문이다. fifo를 뺀 경로 지연은 매번 같았다.
+
+#### 왜 다른가 — 단계별로
+
+load 하나의 지연은 다음 다섯 조각의 합이다. 앞의 두 조각은 코어가, 뒤의 세 조각은 SoC가 정한다.
+
+| 조각 | 사이클 | 무엇이 정하나 | 근거 |
+|---|---|---|---|
+| ① DC → AR | line fill 6, 단일 읽기 4 | LSU가 miss를 확인하고 LFB 엔트리를 만든 뒤 BIU가 AR을 낸다. line fill은 LFB 경유라 2 사이클 더 길다 | `aq_lsu_lfb.v`, `aq_lsu_lfb_entry.v:576` (`len = ca ? 3 : 0`) |
+| ② `axi_fifo` 대기 | 1 또는 0~200 | **SoC의 인공 지연 모델.** 0x0~0x1FFFF이고 `arcache[2]=1`이면 `bus_delay`(기본 0)를 쓰고, 그 밖은 엔트리 카운터가 free-running이라 위상에 따라 달라진다 | `axi_fifo.v:205-208`, Phase 4의 5절 |
+| ③ fifo → 첫 R beat | SRAM·ERR 2, AHB RAM 4(단일)/7(burst), SoC APB 5/11 | **목적지까지 지나는 브리지 수.** SRAM은 interconnect 다음 바로 slave다. 주변장치는 `axi2ahb` → AHB → `ahb2apb`(setup + access 2 cycle)를 지나고, `axi2ahb`는 버스트를 AHB INCR 4 beat로 바꾼 뒤 **4 beat를 다 받고서야** AXI R을 돌려준다 | `axi2ahb.v`, `ahb2apb.v` |
+| ④ 첫 beat → 마지막 beat | SRAM 6, AHB/APB 3 | 버스트 길이. line fill은 critical word가 첫 beat라 **데이터는 첫 beat 기준**으로 돌아온다 | Phase 4의 4.2절 |
+| ⑤ 첫 beat → 파이프라인 | 2 | LFB가 데이터를 받아 EX2로 돌려준다 | `lsu_rtu_ex2_data_vld` |
+
+CPU 내부 APB(PLIC, CLINT)는 ①에서 BIU `apbif`로 빠지므로 ②~④가 없다. `apbif`가 psel을 내기까지 5 사이클은 같고, 그 뒤가 다르다.
+
+- **CLINT**는 psel 뒤 5 사이클 만에 데이터가 온다(APB 클럭이 CPU의 절반이라 setup + access = CPU 4 사이클 + 응답 래치).
+- **PLIC**는 13 사이클이 걸린다. PLIC 안의 `csky_apb_1tox_matrix`가 하위 블록으로 가는 psel·penable·주소를 한 번 flop하고 돌아오는 pready·prdata를 또 flop하며, 하위 블록(`plic_kid_busif`, `plic_ctrl`)도 pready를 flop하기 때문이다(`csky_apb_1tox_matrix.v:165-189, 217-257`, `plic_kid_busif.v:458-463`). 2.3절 파형 ②의 "access 10 사이클"이 이것이다. flop마다 몇 사이클씩인지는 세지 않았다.
+
+#### 예외가 나는 곳 — 그리고 imprecise
+
+| 원인 | 경로 | 결과 |
+|---|---|---|
+| AHB 기본 슬레이브 (0x1F02_0000~) | `err_gen`이 hresp = ERROR → `axi2ahb`가 **rresp = 2(SLVERR)** 로 바꾼다 (`axi2ahb.v:555, 628`) | LFB가 bus error를 보고 비동기 예외를 올린다 |
+| CPU 내부 APB 빈 곳 (0x40_0401_0000~0x40_07FF_FFFF) | `apbif`에서 PLIC도 CLINT도 선택되지 않으면 `sel_none` → 곧바로 `perr`로 완료 (`aq_biu_apbif.v:311-323`) | 같은 비동기 예외 |
+
+두 경우 모두 mcause = 5(load access fault), mtval = 물리 주소인데 **mepc가 load가 아니라 load+8**(load 뒤의 `addi` 다음 명령)이다. load는 데이터를 기다리지 않고 retire되므로(Phase 3의 3.7절), 버스 에러가 돌아올 때는 이미 뒤 명령이 retire되고 있다. LSU는 이를 `lsu_rtu_async_expt_vld`로 알리고(`aq_lsu_dc.v:2272-2284`), RTU는 **그때 retire하는 명령의 다음 PC**를 mepc로 쓴다(`aq_rtu_retire.v:450-453, 565-575`). 그래서 예외 처리기에서 `mepc+4`로 돌아가면 load가 아니라 엉뚱한 명령을 건너뛴다. 테스트의 `_cyc`를 보고하지 못한 이유도 이것이다(`TOC`의 `csrr`이 건너뛰어졌다).
+
+#### 40bit를 넘는 주소
+
+M-mode에서 `ld 0x100_0000_0000`은 예외 없이 주소 0의 명령 워드(`li x31,0` = 0x0000_0F93)를 읽었다. MMU가 꺼져 있거나 M-mode면 VA 상위 비트 검사(`utlb_va_illegal`)가 꺼지고(`aq_mmu_utlb.v:732-737`), PA는 VA[39:0]이다. 즉 **M-mode의 주소 공간은 2^40 단위로 반복(alias)된다.** Sv39를 켠 S/U-mode에서는 VA[63:39]가 부호 확장이 아니면 page fault가 난다.
+
+#### SoC 주변장치를 읽을 때의 함정 두 가지
+
+**① 16B 정렬이 아닌 레지스터는 제대로 읽히지 않는다.** 주변장치 창(0x1000_0000~)은 sysmap R0이라 SO(strongly-ordered)가 아니다. SO가 아닌 uncached load는 **주소 하위 4bit를 0으로 만들고 16B 크기로** 읽고(`aq_lsu_lfb_entry.v:578-579`), store는 **8B로 정렬하고 strobe로 레인을 고른다**(`aq_lsu_stb_entry.v:646-648`). AXI로는 맞는 동작이지만 SoC의 `ahb2apb`는 그 주소로 APB 접근을 **한 번만** 한다.
+
+- timer 1 현재값(0x1001_1004)을 `lw` → 버스에는 AR 0x1001_1000, APB도 0x1001_1000(load count)을 읽고, 128bit 중 [63:32] 레인은 0이라 결과 0.
+- timer 4 control(0x1001_1044)에 `sw` → AW 0x1001_1040, APB에는 **0x1001_1040에 pwdata 0**이 써졌다(load count가 0으로 바뀜).
+- UART(0x1001_5000), bus_delay(0x1001_A000), timer load(0x1001_1000)처럼 16B 정렬 레지스터는 문제없다. PLIC/CLINT는 R6(SO)라 주소가 그대로 나가 정렬 문제가 없다.
+- 실제 칩이라면 주변장치 구간을 SO로 두어야 한다. 이 SoC의 sysmap(`sysmap.h`)이 주변장치 창을 R0에 넣은 것이 원인이고, Sv39 + MAEE로 PTE에 SO를 주는 방법(Phase 4의 3.4절)은 시험하지 않았다.
+
+**② 캐시로 읽으면 옛 값을 계속 돌려준다.** R0은 cacheable이라 DE=1이면 주변장치도 line fill된다(64B = AHB 4 beat = APB 4번 읽기). 그 뒤의 읽기는 캐시 hit(7 cycle)라 장치가 값을 바꿔도 모른다. 테스트는 timer 1의 int status(0x1001_1010)로 확인했다: 타이머가 울리기 전 캐시로 읽어 0, 울린 뒤 DE=0으로 읽으면 **1**, 다시 캐시로 읽으면 **0**(MARK 31~33).
+
+#### 덤으로 본 것 — DE=0 store가 STB에 머무는 시간
+
+stale 실험 중에 DE=0으로 timer control에 쓴 `sw`가 **`fence` 뒤에도 약 3000 사이클** 버스에 나가지 않았다. sysmap 속성이 cacheable인 store는 DE와 무관하게 STB의 write-combine 상태(`STB_MERGE`)로 들어가고(`aq_lsu_stb_entry.v:376-377`, 속성은 DE로 가리지 않는다: `aq_lsu_stb_entry.v:517`), 같은 라인으로의 다음 접근이 오고서야 나갔다. `fence`는 merge를 끝내는 조건(`cp0_lsu_fence_req`, `aq_lsu_stb.v:569-571`)에 들어 있는데도 이번에는 그렇게 되지 않았고, 이유는 확인하지 못했다. 테스트는 같은 라인을 한 번 읽어 store를 내보낸다.
+
+같은 이유로 **DE=0이어도 `arcache[2]`는 1**이다(LFB가 DE로 가린 `ca`가 아니라 sysmap 속성 `dc_attr`을 쓴다: `aq_lsu_lfb.v:679`, `aq_lsu_dc.v:1773`, `aq_lsu_lfb_entry.v:574`). 그래서 0x0~0x1FFFF의 DE=0 읽기도 `axi_fifo` 대기가 1로 고정됐다(16 cycle × 3회).
 
 ---
 
@@ -608,6 +691,18 @@ make runcase CASE=coremark SIM=iverilog
 - [ ] `xx_intc_int[19]` → `pad_plic_int_vld[19]` → PLIC claim 값 35 순서로 확인
 - [ ] `plic_core0_me_int` → CP0 `mip.MEIP`까지 걸리는 사이클 수
 
+### Lab 8.6: 영역별 load 지연 (2.4절)
+
+```bash
+make run T=p8_bus02_ld_region     # GTKW 그룹: id lsu ex axi ahb apb
+```
+
+- [ ] MARK 1·3·8·9에서 `bus_arvalid` → `ic_arvalid·ic_arready` 간격(axi_fifo 대기)을 재고, 0x0~0x1FFFF 안과 밖이 왜 다른지 설명한다
+- [ ] MARK 12·16에서 `axi2ahb` → AHB → APB 를 지나는 사이클을 SRAM(MARK 8)과 비교한다
+- [ ] MARK 21·23에서 PLIC 와 CLINT 의 psel → 데이터 간격을 잰다
+- [ ] MARK 18·24의 예외에서 mepc 가 load 주소가 아닌 이유를 설명한다
+- [ ] MARK 30에서 AR 주소가 load 주소와 다른 것을 확인한다
+
 ---
 
 ## 8. Further Study
@@ -657,6 +752,9 @@ C906 이후에 비교해 볼 만한 오픈소스 코어다. 같은 기능이 다
 - [ ] AXI valid/ready, AHB HTRANS/HREADY, APB PSEL/PENABLE 핸드셰이크를 실제 파형에서 짚을 수 있다
 - [ ] AHB와 APB의 차이점을 설명할 수 있다
 - [ ] UART를 통한 시뮬레이션 printf 메커니즘과 cacheable 함정을 설명할 수 있다
+- [ ] 메모리 맵 영역마다 scalar load 가 되는지, 지연이 어떤 조각(코어·axi_fifo·브리지·버스트)으로 이루어지는지 설명할 수 있다
+- [ ] 버스 에러가 imprecise(비동기) 예외로 오는 이유와 mepc 가 가리키는 곳을 설명할 수 있다
+- [ ] 주변장치를 cacheable / non-SO 로 접근할 때의 두 함정(옛 값, 16B 정렬)을 설명할 수 있다
 - [ ] 커스텀 어셈블리 테스트를 작성하고 실행할 수 있다
 - [ ] CoreMark/MHz의 의미를 설명할 수 있다
 - [ ] IPC 저하 원인을 분석할 수 있다
