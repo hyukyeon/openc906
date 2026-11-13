@@ -42,6 +42,16 @@ GROUPS = {
         ("mul_wb", 1, "b"), ("mul_full", 1, "b"), ("div_busy", 1, "b"), ("div_wb", 1, "b"),
         ("fwd0_vld", 1, "b"), ("fwd0_reg", 6, "d"), ("fwd1_vld", 1, "b"), ("fwd1_reg", 6, "d"),
         ("fwd2_vld", 1, "b"), ("fwd2_reg", 6, "d")]),
+    "pipe": ("Execution flow: EX1 complete -> retire / MUL EX2-EX3 / DIV FSM / wb0 arbitration", [
+        ("asm_ex1", 320, "a"), ("ex1_alu", 1, "b"), ("ex1_mul", 1, "b"), ("ex1_div", 1, "b"), ("ex1_lsu", 1, "b"),
+        ("ex1_cmplt", 1, "b"), ("asm_rt", 320, "a"), ("rt_vld", 1, "b"),
+        ("mul_state", 2, "d"), ("mul_ex2_vld", 1, "b"), ("mul_ex3_vld", 1, "b"), ("mul_wb", 1, "b"),
+        ("mul_grant", 1, "b"), ("mul_ex3_stall", 1, "b"),
+        ("div_state", 3, "d"), ("div_wb", 1, "b"), ("div_grant", 1, "b"),
+        ("lsu_dc_vld", 1, "b"), ("lsu_dc_hit", 1, "b"), ("lsu_dc_miss", 1, "b"), ("lsu_ld_data_vld", 1, "b"), ("lsu_full", 1, "b"),
+        ("wb0_vld", 1, "b"), ("wb0_reg", 6, "d"), ("wb1_vld", 1, "b"), ("wb1_reg", 6, "d"),
+        ("fwd0_vld", 1, "b"), ("fwd1_vld", 1, "b"), ("fwd2_vld", 1, "b"),
+        ("id_stall_raw", 1, "b"), ("id_stall_waw", 1, "b"), ("id_stall_ex1", 1, "b")]),
     "lsu": ("LSU: AG(EX1) -> DC(EX2)", [
         ("lsu_ag_vld", 1, "b"), ("lsu_ag_va", 40, "h"), ("lsu_dc_vld", 1, "b"), ("lsu_dc_pa", 40, "h"),
         ("lsu_dc_ld", 1, "b"), ("lsu_dc_st", 1, "b"), ("lsu_dc_hit", 1, "b"), ("lsu_dc_miss", 1, "b"),

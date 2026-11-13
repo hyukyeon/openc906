@@ -114,7 +114,16 @@ module study_probe;
   wire        mul_wb          = `SP_CORE.iu_rtu_ex3_mul_wb_vld;  // EX3 에서 곱셈 결과 write-back
   wire        mul_full        = `SP_CORE.iu_idu_mult_full;
   wire        div_busy        = `SP_CORE.iu_idu_div_full;        // 나눗셈기 사용 중
-  wire        div_wb          = `SP_CORE.iu_rtu_div_wb_vld;
+  wire        div_wb          = `SP_CORE.iu_rtu_div_wb_vld;      // 결과 준비됨(CMPLT/WFWB), grant 를 받아야 실제로 씀
+  // 실행 흐름 관찰용 (p3_be06): complete / MUL 단계 / DIV 상태 / rbus(wb0) 중재
+  wire        ex1_cmplt       = `SP_RTU.x_aq_rtu_ctrl.ctrl_ex1_cmplt;          // EX1 명령이 complete -> 다음 사이클 retire
+  wire        mul_ex2_vld     = `SP_IU.x_aq_iu_mul.mul_ex2_inst_vld;
+  wire        mul_ex3_vld     = `SP_IU.x_aq_iu_mul.mul_ex3_inst_vld;
+  wire [1:0]  mul_state       = `SP_IU.x_aq_iu_mul.mul_cur_state[1:0];        // 0 IDLE, SPLIT0/1, CMPLT (64bit 큰 피연산자)
+  wire        mul_ex3_stall   = `SP_IU.x_aq_iu_mul.mul_ex3_stall;             // 결과는 있는데 wb0 grant 를 못 받음
+  wire        mul_grant       = `SP_CORE.rtu_iu_mul_wb_grant;                // = !EX1 결과 && !DIV 결과
+  wire [2:0]  div_state       = `SP_IU.x_aq_iu_div.div_cur_state[2:0];       // 0 IDLE 1 WFI2 2 ALIGN 3 ITER 4 CMPLT 5 WFWB
+  wire        div_grant       = `SP_CORE.rtu_iu_div_wb_grant;                // = !EX1 결과
 
   // --------------------------------------------------------------------------
   // 4. LSU : AG(=EX1) -> DC(=EX2) -> (miss 시 LFB/BIU)
@@ -450,12 +459,12 @@ module study_probe;
     trace_all = $test$plusargs("trace_all");
     if ($value$plusargs("trace=%s", trace_file)) begin
       tfd = $fopen(trace_file, "w");
-      $fdisplay(tfd, "# cyc mark if_g if_pc btb_hit btb_redir ip_v0 ip_v1 ip_pc ip_taken ip_redir ip_redir_pc ip_curflw ibuf id_v id_inst pipedown stall raw waw ex1st cp0st ex1_v ex1_eu ex1_pc br_v br_taken bht_misp jalr_misp ras_misp iu_redir iu_redir_pc mul_wb div_busy ag_v ag_va dc_v dc_ld dc_st dc_hit dc_miss stb_fwd ldv rt_v rt_pc flush rt_redir rt_redir_pc expt priv ghr bht_pred ras_ptr stb_part ic_miss");
+      $fdisplay(tfd, "# cyc mark if_g if_pc btb_hit btb_redir ip_v0 ip_v1 ip_pc ip_taken ip_redir ip_redir_pc ip_curflw ibuf id_v id_inst pipedown stall raw waw ex1st cp0st ex1_v ex1_eu ex1_pc br_v br_taken bht_misp jalr_misp ras_misp iu_redir iu_redir_pc mul_wb div_busy ag_v ag_va dc_v dc_ld dc_st dc_hit dc_miss stb_fwd ldv rt_v rt_pc flush rt_redir rt_redir_pc expt priv ghr bht_pred ras_ptr stb_part ic_miss ex1_cmplt mul_e2 mul_e3 mul_st mul_stall mul_grant div_st div_wb div_grant wb0_v wb0_reg wb1_v wb1_reg lsu_full");
     end
   end
   always @(posedge clk) begin
     if (tfd != 0 && rst_b && (trace_all || mark != 0)) begin
-      $fdisplay(tfd, "%0d %0d %b %h %b %b %b %b %h %b %b %h %b %0d %b %h %b %b %b %b %b %b %b %b %h %b %b %b %b %b %b %h %b %b %b %h %b %b %b %b %b %b %b %b %h %b %b %h %b %0d %h %b %h %b %b",
+      $fdisplay(tfd, "%0d %0d %b %h %b %b %b %b %h %b %b %h %b %0d %b %h %b %b %b %b %b %b %b %b %h %b %b %b %b %b %b %h %b %b %b %h %b %b %b %b %b %b %b %b %h %b %b %h %b %0d %h %b %h %b %b %b %b %b %0d %b %b %0d %b %b %b %0d %b %0d %b",
         cycle, mark, fe_if_grant, fe_if_pc, fe_btb_hit, fe_btb_redirect,
         fe_ip_vld0, fe_ip_vld1, fe_ip_pc, fe_ip_br_taken, fe_ip_redirect, fe_ip_redir_pc, fe_ip_curflw,
         fe_ibuf_num, id_vld, id_inst, id_pipedown, id_stall, id_stall_raw, id_stall_waw, id_stall_ex1, id_stall_cp0,
@@ -464,7 +473,9 @@ module study_probe;
         mul_wb, div_busy,
         lsu_ag_vld, lsu_ag_va, lsu_dc_vld, lsu_dc_ld, lsu_dc_st, lsu_dc_hit, lsu_dc_miss, lsu_stb_fwd, lsu_ld_data_vld,
         rt_vld, rt_pc, rt_flush, rt_redirect, rt_redirect_pc, rt_expt, cp0_priv,
-        fe_bht_ghr, fe_bht_pred, fe_ras_ptr, lsu_stb_part, fe_ic_miss);
+        fe_bht_ghr, fe_bht_pred, fe_ras_ptr, lsu_stb_part, fe_ic_miss,
+        ex1_cmplt, mul_ex2_vld, mul_ex3_vld, mul_state, mul_ex3_stall, mul_grant,
+        div_state, div_wb, div_grant, wb0_vld, wb0_reg, wb1_vld, wb1_reg, lsu_full);
     end
   end
 

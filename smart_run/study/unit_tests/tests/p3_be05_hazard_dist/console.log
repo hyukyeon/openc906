@@ -1,0 +1,38 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ ld_use_d1 = 51
+@@ ld_use_d2 = 51
+@@ ld_use_d3 = 67
+@@ mul_use_d1 = 67
+@@ mul_use_d2 = 67
+@@ mul_use_d3 = 68
+@@ mulbig_use_d1 = 59
+@@ mulbig_use_d4 = 68
+@@ mulbig_use_d7 = 92
+@@ ld_br_same_rd = 43
+@@ ld_br_alt_rd = 35
+@@ ld_use_same_rd = 51
+@@ ld_use_alt_rd = 51
+@@ mul_d2_same_rd = 67
+@@ mul_d2_alt_rd = 67
+@@ waw_mul_alu = 83
+@@ waw_ld_ld = 51
+@@ waw_alu_ld = 66
+@@ waw_mul_mul = 67
+@@ mul_sd_data = 67
+@@ ld_mul_src = 53
+@@ ld_sd_data = 35
+@@ ld_sd_addr = 51
+@@ csrr_x8 = 51
+@@ csrw_x8 = 88
+@@ fence_x8 = 35
+@@ fencei_x4 = 3201
+@@ empty = 3
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish

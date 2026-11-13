@@ -425,7 +425,7 @@ smart_run/study/unit_tests/
 │   ├── study_tbdev.v     # TB 장치: SoC 외부 인터럽트 선 구동 (store 로 제어, Phase 5 6 절)
 │   ├── soc_overlay/      # SoC 파일 학습용 사본 (cpu_sub_system_axi.v: 외부 인터럽트 입력 추가, 원본과 한 줄 차이)
 │   └── sim_top.v         # Verilator 용 래퍼 (tb + study_probe + study_tbdev)
-├── tests/                # 테스트 25 개, 폴더 하나에 하나: tests/<test>/<test>.S
+├── tests/                # 테스트 27 개, 폴더 하나에 하나: tests/<test>/<test>.S
 │   └── p5_sys06_wfi_flag/ #   <test>.S + 실행 후 복사되는 <test>.objdump, console.log (git 에 함께 올라감)
 ├── tools/                # mk_asm_rom / mk_gtkw / pipeview / vcd_query / wave_snap / collect_results / wave_web
 ├── web/                  # 브라우저 파형 뷰어 (테스트 목록 index.html + Surfer WASM)
@@ -454,7 +454,7 @@ make run T=... SIM=iverilog     # 원본과 같은 시뮬레이터 (매우 느�
 | `<test>.vcd` | study_probe 신호 덤프 (수 MB~수십 MB) |
 | `<test>.gtkw` | GTKWave 세이브 파일 (테스트 헤더 `# GTKW:` 의 그룹) |
 | `trace.log` | 사이클별 파이프라인 상태 (기계용) |
-| `pipeview.txt` | 사람이 읽는 사이클 표 (IF/IP/IB/ID/EX1/RETIRE + 이벤트) |
+| `pipeview.txt` | 사람이 읽는 사이클 표 (IF/IP/IB/ID/EX1/RETIRE/BACK/WB + 이벤트). BACK 은 EX1 뒤에 남은 MUL(M2/M3, `M3!` = wb0 grant 대기)과 DIV 상태(`D:it`, `D:wf` = 결과 쓰기 대기), WB 는 그 사이클의 레지스터 쓰기(w0 = rbus, w1 = load) |
 | `<test>.objdump` | 디스어셈블리 |
 
 ### 7.3 브라우저에서 파형 보기 (`make web`)
@@ -491,6 +491,7 @@ make web-stop   # 중지
 | bht / ras | `fe_bht_vghr`, `fe_bht_ghr`, `fe_bht_pred`, `fe_ras_push/pop`, `fe_ras_ptr`, `fe_ras_ptr_bju` |
 | id | `id_vld`, `id_pipedown`, `id_stall`, `id_stall_raw/waw/ex1/cp0` |
 | ex | `ex1_pc`, `asm_ex1`, `ex1_alu/bju/mul/div/lsu/cp0`, `iu_redirect`, `bju_*_mispred`, `fwd0~2` |
+| pipe | 실행 흐름: `ex1_cmplt`(→ 다음 사이클 retire), `mul_ex2_vld/ex3_vld`, `mul_state`(64bit split), `mul_grant`, `mul_ex3_stall`, `div_state`(0 IDLE … 3 ITER, 4 CMPLT, 5 WFWB), `div_grant`, `wb0/wb1`, `fwd0~2` (Phase 3 3.7 절) |
 | lsu | `lsu_ag_va`, `lsu_dc_pa`, `lsu_dc_hit/miss`, `lsu_stb_fwd`, `lsu_stb_part` |
 | rt | `rt_pc`, `asm_rt`, `wb0/wb1`, `rt_flush`, `rt_redirect`, `rt_expt` |
 | cp0 | `cp0_priv`, `cp0_mstatus_*`, `cp0_mcause_*`, `cp0_mepc`, `cp0_mtval`, `cp0_scause_*` |

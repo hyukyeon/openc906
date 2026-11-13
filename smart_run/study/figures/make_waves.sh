@@ -109,3 +109,10 @@ $S out/p2_fe05_rvc_density --from-cycle 8480 --to-cycle 8497 --pad 0 --height 46
   --signals "clk,cycle,-Front-End,fe_if_pc,fe_btb_redirect,fe_ip_redirect,asm_ip,-Retire,asm_rt" -o $FIG/wave_rvc_loop_aligned.png
 $S out/p2_fe05_rvc_density --from-cycle 9152 --to-cycle 9169 --pad 0 --height 460 \
   --signals "clk,cycle,-Front-End,fe_if_pc,fe_btb_redirect,fe_ip_redirect,asm_ip,-Retire,asm_rt" -o $FIG/wave_rvc_loop_misaligned.png
+# p3_be06: wb0 중재 - ALU 가 EX1 을 계속 차지하면 MUL(EX3) 과 DIV(WFWB) 가 결과를 못 쓴다
+$S out/p3_be06_exec_mix --from-cycle 7842 --to-cycle 7864 --pad 0 --height 620 \
+  --signals "clk,cycle,-Execute / Retire,asm_ex1,ex1_cmplt,asm_rt,-MUL,mul_ex2_vld,mul_ex3_vld,mul_wb,mul_grant,mul_ex3_stall,fwd1_vld,-Write-back,wb0_vld,wb0_reg,-ID,id_stall_raw" \
+  -o $FIG/wave_wb_arb_mul.png
+$S out/p3_be06_exec_mix --from-cycle 6173 --to-cycle 6195 --pad 0 --height 600 \
+  --signals "clk,cycle,-Execute / Retire,asm_ex1,ex1_cmplt,asm_rt,-DIV,div_state,div_wb,div_grant,-Write-back,wb0_vld,wb0_reg,-ID,id_stall_raw" \
+  -o $FIG/wave_wb_arb_div.png

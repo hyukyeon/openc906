@@ -384,10 +384,12 @@ assign ctrl_dis_src0_raw_except =
 | load → (1 명령 건너) load 주소 | 36 | 0 | 거리 2 면 충분 |
 | mul → 바로 사용 | 67 | **+2** | MUL latency 3 |
 | mul → 독립 | 36 | 0 | MUL 파이프라인 |
-| load → 조건분기 | 43 | +0.5 | 예외 2: BJU 가 기다림 |
+| load → 조건분기 | 43 | +0.5 | 예외 2: BJU 가 기다림. 단 같은 rd(a4)에 writer 가 2 개 겹치는 쌍은 예외가 꺼진다(WBT cnt) → 두 쌍에 한 번 +1. rd 를 번갈아 쓰면 35 |
 | load → store 데이터 | 35 | **0** | 예외 4 |
 | load → store 주소 | 51 | +1 | 예외 아님 |
 | load ; 같은 rd 에 li (WAW) | 67 | **+2** | 생산자가 LSU 면 ALU 의 WAW 예외 없음 |
+
+거리별 stall, WBT cnt, 생산자별 WAW, CSR/fence 직렬화, "같은 명령 연속 vs 섞기"는 `p3_be05_hazard_dist`, `p3_be06_exec_mix` 로 따로 쟀다(Phase 3 의 3.7 절, 4 절).
 
 ![load-use stall 파형](../figures/wave_load_use.png)
 

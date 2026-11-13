@@ -1,0 +1,36 @@
+	********* Init Program *********
+	********* Wipe memory to 0 *********
+	********* Read program *********
+	********* Load program to memory *********
+@@ f1_add_use = 5
+@@ f2_mul_use = 7
+@@ f3_mul64big_use = 10
+@@ f4_div_use = 14
+@@ f5_ld_hit_use = 6
+@@ f6_ld_miss_use = 59
+@@ f7_sd_then_ld = 6
+@@ f8_div_4alu_use = 14
+@@ f9_div_16alu_use = 23
+@@ f10_ldmiss_16alu_use = 70
+@@ f11_ldmiss_4ldhit = 59
+@@ f12_mul_16alu_use = 22
+@@ alu_x32 = 35
+@@ mul_x32 = 37
+@@ mul64big_x16 = 69
+@@ ld_x32 = 36
+@@ sd_x32 = 35
+@@ div_x4 = 36
+@@ mul_add_x16 = 36
+@@ mul_add_add_x11 = 37
+@@ ld_add_x16 = 35
+@@ ld_mul_x16 = 37
+@@ ld_sd_x16 = 35
+@@ div_add10_x4 = 48
+@@ div_mul_x4 = 36
+@@ mul_ld_add_x11 = 37
+[study] PASS
+
+**********************************************
+*    simulation finished successfully        *
+**********************************************
+- /home/hyukyeon/07_OpenC906/openc906/smart_run/logical/tb/tb.v:269: Verilog $finish
